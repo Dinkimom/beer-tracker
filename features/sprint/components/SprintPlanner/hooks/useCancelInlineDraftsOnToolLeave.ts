@@ -1,5 +1,5 @@
+import type { SprintBoard } from '@/features/sprint/model/SprintBoard';
 import type { SwimlanePlacementTool } from '@/lib/layers';
-import type { Task, TaskPosition } from '@/types';
 
 import { useEffect, useRef } from 'react';
 
@@ -7,33 +7,29 @@ import { cancelLocalCreateDraftOnToolLeave } from './cancelQuickAddDraft';
 
 /** Смена инструмента тулбара отменяет черновик заметки, фото или схемы, который он создавал. */
 export function useCancelInlineDraftsOnToolLeave(input: {
+  /** Задачи и позиции (с сохранением) — из модели доски. */
+  board: SprintBoard;
   placementTool: SwimlanePlacementTool;
   submittingTaskId: string | null;
-  tasks: Task[];
   clearNoteEditPreview?: () => void;
   clearStickyNoteCardRowOverride: (taskId: string) => void;
   closeNoteComposer: () => void;
   keepInlineCardDraftRef?: { current: boolean };
   setSubmittingTaskId: (taskId: string | null) => void;
-  setTaskPositions: (
-    updater: (prev: Map<string, TaskPosition>) => Map<string, TaskPosition>,
-    options: { recordHistory: boolean }
-  ) => void;
-  setTasks: (updater: (prev: Task[]) => Task[]) => void;
 }): void {
   const previousToolRef = useRef(input.placementTool);
   const {
+    board,
     clearNoteEditPreview,
     clearStickyNoteCardRowOverride,
     closeNoteComposer,
     keepInlineCardDraftRef,
     placementTool,
     setSubmittingTaskId,
-    setTaskPositions,
-    setTasks,
     submittingTaskId,
-    tasks,
   } = input;
+  const { tasks, updateTasks: setTasks } = board;
+  const { setPositionsWithSave: setTaskPositions } = board.positions;
 
   useEffect(() => {
     const previousTool = previousToolRef.current;

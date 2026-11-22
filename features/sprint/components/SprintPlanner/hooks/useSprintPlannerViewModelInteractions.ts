@@ -90,7 +90,7 @@ export function useSprintPlannerViewModelInteractions({
 }: UseSprintPlannerViewModelInteractionsParams) {
   const { sprintPlannerUi } = useRootStore();
   const { deleteTrackerOverlayLink, trackerTaskLinks } = trackerLinks;
-  const { board, setTasks, viewMode } = state;
+  const { board, viewMode } = state;
   const {
     allTasksForDrag,
     developers,
@@ -143,7 +143,6 @@ export function useSprintPlannerViewModelInteractions({
     board,
     onTasksReload,
     selectedSprintId,
-    setTasks,
     sprints,
     updateXarrow: debouncedUpdateXarrow,
   });
@@ -162,11 +161,7 @@ export function useSprintPlannerViewModelInteractions({
     handleSegmentEditSave,
     handleSplitPhaseIntoSegments,
     handleUpdateEstimate,
-  } = useSprintPlannerEstimateHandlers({
-    setTasks,
-    syncEstimates,
-    tasksMap,
-  });
+  } = useSprintPlannerEstimateHandlers({ board, syncEstimates });
 
   const {
     assigneePicker,
@@ -179,7 +174,6 @@ export function useSprintPlannerViewModelInteractions({
     developers,
     filteredTaskPositions,
     qaTaskManagement,
-    setTasks,
     syncAssignees,
   });
 
@@ -312,7 +306,6 @@ export function useSprintPlannerViewModelInteractions({
     onCommentCreate: handlers.handleCommentCreate,
     onCommentDelete: handlers.handleCommentDelete,
     onCommentUpdate: board.notes.updateText,
-    setTasks,
     sprintTimelineWorkingDays,
     swimlaneImagesVisible,
     tasksMap,

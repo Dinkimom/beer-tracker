@@ -1,7 +1,6 @@
+import type { SprintBoard } from '@/features/sprint/model/SprintBoard';
 import type { StickyNoteColor } from '@/lib/comments/stickyNoteColor';
-import type { PositionHistoryOptions } from '@/lib/layers/application/mobx/stores/taskPositionsStore';
-import type { Comment, Task, TaskPosition } from '@/types';
-import type { Dispatch, SetStateAction } from 'react';
+import type { Comment } from '@/types';
 
 import { useCallback } from 'react';
 
@@ -12,31 +11,22 @@ import { pasteQuickAddNoteDraft } from './pasteQuickAddNoteDraft';
 import { completeQuickAddCommentDraft } from './submitQuickAddCommentDraft';
 
 interface UseSprintPlannerQuickAddNoteActionsParams {
-  comments: Comment[];
-  setTasks: Dispatch<SetStateAction<Task[]>>;
-  taskPositions: Map<string, TaskPosition>;
-  tasks: Task[];
+  /** Задачи, заметки и позиции (с сохранением) — из модели доски. */
+  board: SprintBoard;
   closeNoteComposer: () => void;
   onCommentCreate: (comment: Comment) => void;
   onCommentUpdate: (commentId: string, text: string, color?: StickyNoteColor) => void;
-  setTaskPositions: (
-    positions:
-      | Map<string, TaskPosition>
-      | ((prev: Map<string, TaskPosition>) => Map<string, TaskPosition>),
-    options?: PositionHistoryOptions
-  ) => void;
 }
 
 export function useSprintPlannerQuickAddNoteActions({
+  board,
   closeNoteComposer,
-  comments,
   onCommentCreate,
   onCommentUpdate,
-  setTaskPositions,
-  setTasks,
-  taskPositions,
-  tasks,
 }: UseSprintPlannerQuickAddNoteActionsParams) {
+  const { displayPositions: taskPositions, tasks, updateTasks: setTasks } = board;
+  const { setPositionsWithSave: setTaskPositions } = board.positions;
+  const comments = board.comments.items;
   const { t } = useI18n();
   const { sprintPlannerUi } = useRootStore();
 

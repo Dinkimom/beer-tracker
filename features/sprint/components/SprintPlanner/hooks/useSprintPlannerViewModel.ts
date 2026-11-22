@@ -109,7 +109,6 @@ export function useSprintPlannerViewModel({
   });
 
   const {
-    setTasks,
     sidebarWidth,
     setSidebarWidth,
     viewMode,
@@ -250,7 +249,7 @@ export function useSprintPlannerViewModel({
     onStatusChange: handlers.handleStatusChange,
     savePosition: handleOccupancyPositionSave,
     selectedSprintId,
-    setTasks,
+    setTasks: state.board.updateTasks,
   });
 
   const sidebarOpen = sprintPlannerUi.overlays.sidebarOpen;
@@ -381,7 +380,7 @@ export function useSprintPlannerViewModel({
       onPlanAssignees: handlers.handlePlanAssignees,
       onReturnAllTasks: handlers.handleReturnAllTasks,
       onSprintTaskUpserted: (task: Task) => {
-        setTasks((prev) => [...prev.filter((existing) => existing.id !== task.id), task]);
+        state.board.updateTasks((prev) => [...prev.filter((existing) => existing.id !== task.id), task]);
       },
       onTasksReload,
       onToggle: sprintPlannerUi.overlays.toggleSidebar,
@@ -422,7 +421,6 @@ export function useSprintPlannerViewModel({
       participantsColumn: { onWidthChange: setParticipantsColumnWidth, width: participantsColumnWidth },
       removeParticipantFromTeam: handleRemoveParticipantFromTeam,
       scrollContainerRef,
-      setTasks,
       sprints,
       taskDurationsByTaskId: swimlaneTaskDurationsMap,
       taskPositions,

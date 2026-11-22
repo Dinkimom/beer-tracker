@@ -1,5 +1,6 @@
+import type { SprintBoard } from '@/features/sprint/model/SprintBoard';
 import type { QuickAddCreateFields } from '@/features/task/components/TaskBar/components/quickAddMenu/types';
-import type { Comment, Task } from '@/types';
+import type { Task } from '@/types';
 import type { Dispatch, SetStateAction } from 'react';
 
 import { useQueryClient } from '@tanstack/react-query';
@@ -28,15 +29,10 @@ interface UseSprintPlannerQuickAddIssueActionsParams
     | 'onOpenCreatedTask'
     | 'persistPlannerDraftParent'
     | 'quickAddParentTasks'
-    | 'savePosition'
-    | 'setTaskPositions'
-    | 'setTasks'
-    | 'taskPositions'
-    | 'tasks'
   > {
+  /** Спринт, задачи, заметки и позиции (с сохранением) — из модели доски. */
+  board: SprintBoard;
   boardIdForPlannerData: number | null;
-  comments: Comment[];
-  selectedSprintId: number | null;
   setQuickAddSubmittingTaskId: Dispatch<SetStateAction<string | null>>;
   sprintTimelineWorkingDays: number;
   closeNoteComposer: () => void;
@@ -44,9 +40,9 @@ interface UseSprintPlannerQuickAddIssueActionsParams
 }
 
 export function useSprintPlannerQuickAddIssueActions({
+  board,
   boardIdForPlannerData,
   closeNoteComposer,
-  comments,
   featureDraftRowNamesById,
   forDemoPlanner,
   getQueueByBoardId,
@@ -54,15 +50,13 @@ export function useSprintPlannerQuickAddIssueActions({
   onOpenCreatedTask,
   persistPlannerDraftParent,
   quickAddParentTasks,
-  savePosition,
-  selectedSprintId,
   setQuickAddSubmittingTaskId,
-  setTaskPositions,
-  setTasks,
   sprintTimelineWorkingDays,
-  taskPositions,
-  tasks,
 }: UseSprintPlannerQuickAddIssueActionsParams) {
+  const { displayPositions: taskPositions, tasks, updateTasks: setTasks } = board;
+  const { savePosition, setPositionsWithSave: setTaskPositions } = board.positions;
+  const comments = board.comments.items;
+  const selectedSprintId = board.sprintId;
   const { t } = useI18n();
   const queryClient = useQueryClient();
 

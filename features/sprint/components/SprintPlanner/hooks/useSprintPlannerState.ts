@@ -2,7 +2,7 @@
  * Хук для управления состоянием SprintPlanner
  * Выносит всю логику управления состоянием из основного компонента.
  *
- * **Задачи и разработчики:** из ответа `useTasks` (тот же кэш, что на странице). Оптимистичные правки списка задач — `setTasks` → `patchSprintTasksQuery` (поле `tasks` в `TasksResponse`).
+ * **Задачи и разработчики:** из ответа `useTasks` (тот же кэш, что на странице). Оптимистичные правки списка задач — `board.updateTasks` → `patchSprintTasksQuery` (поле `tasks` в `TasksResponse`).
  * Подробнее: `ARCHITECTURE.md` в корне репозитория.
  */
 
@@ -108,8 +108,6 @@ export function useSprintPlannerState({
   useEffect(() => board.connect(), [board]);
   const developers = board.developers;
 
-  // Правка задач — у модели (кэш Query); имя `setTasks` — для старых потребителей.
-  const setTasks = board.updateTasks;
 
   const [sidebarWidth, setSidebarWidth] = useSidebarWidthStorage(320);
   const [viewMode, setViewMode] = useBoardViewModeStorage();
@@ -211,6 +209,7 @@ export function useSprintPlannerState({
   }, [developers, syncEstimates, tasksMap]);
 
   useEffect(() => {
+    const setTasks = board.updateTasks;
     const handler = (payload: PlanHistoryAppliedPayload) => {
       reconcileTasksAfterPlanHistoryStep(payload, historyReconcileCtxRef.current, setTasks);
       applyPlanHistorySideEffects(payload, {
@@ -224,12 +223,11 @@ export function useSprintPlannerState({
     return () => {
       positionsStore.setOnPlanHistoryApplied(undefined);
     };
-  }, [positionsStore, selectedSprintId, setComments, setFeatureLanes, setTasks]);
+  }, [board, positionsStore, selectedSprintId, setComments, setFeatureLanes]);
 
   // Данные доски (задачи, позиции, заметки, связи) — у `board`; здесь — то, чего в модели нет.
   return {
     board,
-    setTasks,
     sidebarWidth,
     setSidebarWidth,
     viewMode,

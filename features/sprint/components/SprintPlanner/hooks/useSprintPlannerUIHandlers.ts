@@ -48,7 +48,6 @@ interface UseSprintPlannerUIHandlersProps {
   }) => Promise<boolean>;
   debouncedUpdateXarrow: () => void;
   onTasksReload?: () => void;
-  setTasks: (updater: (prev: Task[]) => Task[]) => void;
 }
 
 export function useSprintPlannerUIHandlers({
@@ -57,7 +56,6 @@ export function useSprintPlannerUIHandlers({
   developersManagement,
   resetDragStateRef,
   selectedSprintId,
-  setTasks,
   sprintStartDate,
   sprintTimelineWorkingDays,
   taskOperations,
@@ -68,7 +66,7 @@ export function useSprintPlannerUIHandlers({
   workflowScreens = {},
 }: UseSprintPlannerUIHandlersProps) {
   const { t } = useI18n();
-  const { displayPositions: taskPositions, positions: positionsStore, tasks } = board;
+  const { displayPositions: taskPositions, positions: positionsStore, tasks, updateTasks: setTasks } = board;
   // Те же праздники, что в шапке свимлейна: расстановка их пропускает
   const holidayDayIndices = useHolidayDays(sprintStartDate, sprintTimelineWorkingDays);
   // Обработчики контекстного меню

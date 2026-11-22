@@ -8,6 +8,7 @@ import { observer } from 'mobx-react-lite';
 import { useCallback, useMemo } from 'react';
 
 import { useI18n } from '@/contexts/LanguageContext';
+import { useSprintBoard } from '@/features/sprint/model/SprintBoardContext';
 import {
   buildFeatureSwimlaneProjection,
   collectFeatureLaneTaskIdsWaitingForDrafts,
@@ -35,8 +36,6 @@ export type FeatureSwimlanesSectionProps = Omit<SwimlanesSectionProps, 'viewMode
     options?: { notify?: boolean }
   ) => Promise<void>;
   onRemoveFromSprint?: (taskId: string, options?: { notify?: boolean }) => Promise<void>;
-  /** Режим по фичам правит родителя локальной задачи. */
-  setTasks?: (updater: (prev: Task[]) => Task[]) => void;
   sprints?: readonly SprintListItem[];
 };
 
@@ -48,11 +47,12 @@ export const FeatureSwimlanesSection = observer(function FeatureSwimlanesSection
   onCommentsLeftSprint,
   onMoveToSprint,
   onRemoveFromSprint,
-  setTasks,
   sprints = [],
   ...props
 }: FeatureSwimlanesSectionProps) {
   const { t } = useI18n();
+  // Родитель задачи при конвертации и удалении черновой строки — сразу в модели доски, до ответа трекера.
+  const { updateTasks } = useSprintBoard();
   const [lanes, setLanes, lanesLoaded] = useFeatureLanesApi(props.board.selectedSprintId);
   const boardLabels = useMemo(
     () => ({
@@ -98,7 +98,7 @@ export const FeatureSwimlanesSection = observer(function FeatureSwimlanesSection
   });
   const handleLocalTaskParentChange = useCallback(
     (taskId: string, parent: TaskParent | null) => {
-      setTasks?.((prev) =>
+      updateTasks((prev) =>
         prev.map((task: Task) => {
           if (task.id !== taskId) {
             return task;
@@ -107,7 +107,7 @@ export const FeatureSwimlanesSection = observer(function FeatureSwimlanesSection
         })
       );
     },
-    [setTasks]
+    [updateTasks]
   );
   const draftConvert = useFeatureLaneDraftConvert({
     comments: props.comments,

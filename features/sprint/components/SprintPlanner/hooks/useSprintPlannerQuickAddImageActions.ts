@@ -1,6 +1,5 @@
-import type { PositionHistoryOptions } from '@/lib/layers/application/mobx/stores/taskPositionsStore';
-import type { Comment, Task, TaskPosition } from '@/types';
-import type { Dispatch, SetStateAction } from 'react';
+import type { SprintBoard } from '@/features/sprint/model/SprintBoard';
+import type { Comment } from '@/types';
 
 import { useCallback } from 'react';
 import toast from 'react-hot-toast';
@@ -13,31 +12,22 @@ import { applyQuickAddDraftImageUrl } from './applyQuickAddDraftFields';
 import { submitQuickAddImageDraft } from './submitQuickAddImageDraft';
 
 interface UseSprintPlannerQuickAddImageActionsParams {
+  /** Спринт, задачи и позиции (с сохранением) — из модели доски. */
+  board: SprintBoard;
   forDemoPlanner: boolean;
-  selectedSprintId: number | null;
-  setTasks: Dispatch<SetStateAction<Task[]>>;
-  taskPositions: Map<string, TaskPosition>;
-  tasks: Task[];
   onCommentCreate: (comment: Comment) => void;
   setQuickAddSubmittingTaskId: (taskId: string | null) => void;
-  setTaskPositions: (
-    positions:
-      | Map<string, TaskPosition>
-      | ((prev: Map<string, TaskPosition>) => Map<string, TaskPosition>),
-    options?: PositionHistoryOptions
-  ) => void;
 }
 
 export function useSprintPlannerQuickAddImageActions({
+  board,
   forDemoPlanner,
   onCommentCreate,
-  selectedSprintId,
   setQuickAddSubmittingTaskId,
-  setTaskPositions,
-  setTasks,
-  taskPositions,
-  tasks,
 }: UseSprintPlannerQuickAddImageActionsParams) {
+  const { displayPositions: taskPositions, tasks, updateTasks: setTasks } = board;
+  const { setPositionsWithSave: setTaskPositions } = board.positions;
+  const selectedSprintId = board.sprintId;
   const { t } = useI18n();
   const { sprintPlannerUi } = useRootStore();
 

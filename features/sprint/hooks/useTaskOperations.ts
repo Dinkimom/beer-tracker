@@ -7,7 +7,7 @@ import { useTaskStatusOperations } from './useTaskOperations/hooks/useTaskStatus
 
 
 export function useTaskOperations(props: UseTaskSprintOperationsProps) {
-  const { changeStatus } = useTaskStatusOperations({ setTasks: props.setTasks, tasks: props.board.tasks });
+  const { changeStatus } = useTaskStatusOperations({ setTasks: props.board.updateTasks, tasks: props.board.tasks });
   const { moveToSprint, removeFromSprint } = useTaskSprintOperations(props);
   return { changeStatus, moveToSprint, removeFromSprint };
 }

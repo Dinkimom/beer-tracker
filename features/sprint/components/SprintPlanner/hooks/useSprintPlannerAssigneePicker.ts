@@ -35,7 +35,6 @@ interface UseSprintPlannerAssigneePickerParams {
       devTaskPosition: TaskPosition
     ) => boolean;
   };
-  setTasks: React.Dispatch<React.SetStateAction<Task[]>>;
   syncAssignees: boolean;
 }
 
@@ -44,10 +43,9 @@ export function useSprintPlannerAssigneePicker({
   developers,
   filteredTaskPositions,
   qaTaskManagement,
-  setTasks,
   syncAssignees,
 }: UseSprintPlannerAssigneePickerParams) {
-  const { displayPositions: taskPositions } = board;
+  const { displayPositions: taskPositions, updateTasks: setTasks } = board;
   const { savePosition } = board.positions;
   const [assigneePicker, setAssigneePicker] = useState<AssigneePickerState | null>(null);
 

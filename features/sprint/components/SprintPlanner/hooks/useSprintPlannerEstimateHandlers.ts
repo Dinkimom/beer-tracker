@@ -1,3 +1,4 @@
+import type { SprintBoard } from '@/features/sprint/model/SprintBoard';
 import type { PhaseSegment, Task, TaskPosition } from '@/types';
 
 import { useCallback } from 'react';
@@ -17,19 +18,19 @@ import {
 } from './useSprintPlannerEstimateHandlersHelpers';
 
 interface UseSprintPlannerEstimateHandlersParams {
-  setTasks: React.Dispatch<React.SetStateAction<Task[]>>;
+  /** Задачи и их правка — из модели доски. */
+  board: SprintBoard;
   syncEstimates: boolean;
-  tasksMap: Map<string, Task>;
 }
 
 /**
  * Оценки (SP/TP), сохранение позиций при ресайзе фаз и редактор отрезков.
  */
 export function useSprintPlannerEstimateHandlers({
-  setTasks,
+  board,
   syncEstimates,
-  tasksMap,
 }: UseSprintPlannerEstimateHandlersParams) {
+  const { tasksMap, updateTasks: setTasks } = board;
   const { sprintPlannerUi, taskPositions: positionsStore } = useRootStore();
   const { savePosition } = positionsStore;
 

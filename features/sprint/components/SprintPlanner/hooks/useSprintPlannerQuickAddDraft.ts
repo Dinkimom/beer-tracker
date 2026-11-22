@@ -51,7 +51,6 @@ interface UseSprintPlannerQuickAddDraftParams {
   boardIdForPlannerData: number | null;
   boards: BoardListItem[];
   forDemoPlanner: boolean;
-  setTasks: React.Dispatch<React.SetStateAction<Task[]>>;
   sprintTimelineWorkingDays: number;
   swimlaneImagesVisible?: boolean;
   tasksMap: Map<string, Task>;
@@ -70,14 +69,13 @@ export function useSprintPlannerQuickAddDraft({
   onCommentCreate,
   onCommentDelete,
   onCommentUpdate,
-  setTasks,
   sprintTimelineWorkingDays,
   swimlaneImagesVisible = true,
   tasksMap,
 }: UseSprintPlannerQuickAddDraftParams) {
-  const { developers, displayPositions: taskPositions, tasks } = board;
+  const { developers, displayPositions: taskPositions, tasks, updateTasks: setTasks } = board;
   const comments = board.comments.items;
-  const { savePosition, setPositionsWithSave: setTaskPositions } = board.positions;
+  const { setPositionsWithSave: setTaskPositions } = board.positions;
   const { t } = useI18n();
   const { sprintPlannerUi } = useRootStore();
   // Окна заметки и схемы, панель задачи — у UI-стора; спринт — у модели.
@@ -88,22 +86,10 @@ export function useSprintPlannerQuickAddDraft({
   const keepInlineCardDraftRef = useRef(false);
   const [featureLanes, setFeatureLanes] = useFeatureLanesApi(selectedSprintId);
   const { handlePasteQuickAddNote, handleSubmitQuickAddCommentDraft } =
-    useSprintPlannerQuickAddNoteActions({
-      closeNoteComposer, comments, onCommentCreate, onCommentUpdate,
-      setTaskPositions, setTasks, taskPositions, tasks,
-    });
+    useSprintPlannerQuickAddNoteActions({ board, closeNoteComposer, onCommentCreate, onCommentUpdate });
   const [quickAddSubmittingTaskId, setQuickAddSubmittingTaskId] = useState<string | null>(null);
   const { handleQuickAddDraftImageUrlChange, handleSubmitQuickAddImageDraft } =
-    useSprintPlannerQuickAddImageActions({
-      forDemoPlanner,
-      onCommentCreate,
-      selectedSprintId,
-      setQuickAddSubmittingTaskId,
-      setTaskPositions,
-      setTasks,
-      taskPositions,
-      tasks,
-    });
+    useSprintPlannerQuickAddImageActions({ board, forDemoPlanner, onCommentCreate, setQuickAddSubmittingTaskId });
 
   const quickAddExcludedIssueKeys = useMemo(
     () => collectQuickAddExcludedIssueKeys(tasks, taskPositions),
@@ -237,15 +223,13 @@ export function useSprintPlannerQuickAddDraft({
   });
 
   const cancelDraftOnToolLeave = {
+    board,
     clearNoteEditPreview: sprintPlannerUi.tools.clearNoteEditPreview,
     clearStickyNoteCardRowOverride: sprintPlannerUi.cards.clearStickyNoteCardRowOverride,
     closeNoteComposer,
     placementTool: sprintPlannerUi.tools.placementTool,
     setSubmittingTaskId: setQuickAddSubmittingTaskId,
-    setTaskPositions,
-    setTasks,
     submittingTaskId: quickAddSubmittingTaskId,
-    tasks,
     keepInlineCardDraftRef,
   };
   useCancelInlineDraftsOnToolLeave(cancelDraftOnToolLeave);
@@ -309,9 +293,9 @@ export function useSprintPlannerQuickAddDraft({
   );
 
   const { handleSelectExistingQuickAddDraft, handleSubmitQuickAddDraft } = useSprintPlannerQuickAddIssueActions({
+    board,
     boardIdForPlannerData,
     closeNoteComposer,
-    comments,
     featureDraftRowNamesById,
     forDemoPlanner,
     getQueueByBoardId,
@@ -319,14 +303,8 @@ export function useSprintPlannerQuickAddDraft({
     onOpenCreatedTask,
     persistPlannerDraftParent,
     quickAddParentTasks,
-    savePosition,
-    selectedSprintId,
     setQuickAddSubmittingTaskId,
-    setTaskPositions,
-    setTasks,
     sprintTimelineWorkingDays,
-    taskPositions,
-    tasks,
   });
 
   const quickAdd = useMemo(

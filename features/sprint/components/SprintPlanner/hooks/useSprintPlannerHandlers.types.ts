@@ -29,7 +29,7 @@ export interface UseSprintPlannerHandlersProps {
   resetDragStateRef: MutableRefObject<(() => void) | null>;
   selectedSprintId: number | null;
   /** Сырые данные доски из `useSprintPlannerState` — эти поля хук получает без подмен. */
-  state: Pick<ReturnType<typeof useSprintPlannerState>, 'board' | 'setTasks'>;
+  state: Pick<ReturnType<typeof useSprintPlannerState>, 'board'>;
   taskOperations: {
     changeStatus: (
       taskId: string,

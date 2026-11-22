@@ -4,7 +4,6 @@
  */
 
 import type { SprintBoard } from '@/features/sprint/model/SprintBoard';
-import type { Task } from '@/types';
 
 import { useQueryClient } from '@tanstack/react-query';
 import { useCallback, useMemo } from 'react';
@@ -30,7 +29,6 @@ export interface UseTaskSprintOperationsProps {
   selectedSprintId: number | null;
   sprints: Array<{ id: number; name: string }>;
   onTasksReload?: () => Promise<void> | void;
-  setTasks: (updater: (prev: Task[]) => Task[]) => void;
   updateXarrow?: () => void;
 }
 
@@ -39,9 +37,9 @@ export function useTaskSprintOperations({
   selectedSprintId,
   sprints,
   onTasksReload,
-  setTasks,
   updateXarrow,
 }: UseTaskSprintOperationsProps) {
+  const { updateTasks: setTasks } = board;
   const { setPositionsWithSave: setTaskPositions } = board.positions;
   const { t } = useI18n();
   const queryClient = useQueryClient();

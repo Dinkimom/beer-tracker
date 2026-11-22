@@ -39,7 +39,7 @@ export function useSprintPlannerHandlers({
   onTasksReload,
   workflowScreens,
 }: UseSprintPlannerHandlersProps) {
-  const { board, setTasks } = state;
+  const { board } = state;
   const { allTasksForDrag, filteredTaskLinks, filteredTaskPositions, tasksMap } = boardView;
   const { sprintStartDate, sprintTimelineWorkingDays } = timeline;
   const { t } = useI18n();
@@ -77,7 +77,6 @@ export function useSprintPlannerHandlers({
     developersManagement,
     resetDragStateRef,
     selectedSprintId,
-    setTasks,
     sprintStartDate,
     sprintTimelineWorkingDays,
     taskOperations,
