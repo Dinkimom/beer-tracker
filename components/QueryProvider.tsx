@@ -5,6 +5,8 @@ import { QueryClient } from '@tanstack/react-query';
 import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client';
 import { ReactNode, useState } from 'react';
 
+import { clientGcTime } from '@/lib/queryGcTime';
+
 const BOARDS_CACHE_KEY = 'beer-tracker-query-cache';
 
 function persistedBoardParamsHaveColumns(data: unknown): boolean {
@@ -22,7 +24,8 @@ export function QueryProvider({ children }: { children: ReactNode }) {
         defaultOptions: {
           queries: {
             staleTime: 1000 * 60 * 5,
-            gcTime: 1000 * 60 * 60 * 24, // 24 ч — для персистентного кэша
+            // 24 ч — для персистентного кэша; на сервере без таймеров (см. clientGcTime).
+            gcTime: clientGcTime(1000 * 60 * 60 * 24),
             refetchOnWindowFocus: false,
             refetchOnMount: false,
             retry: 1,

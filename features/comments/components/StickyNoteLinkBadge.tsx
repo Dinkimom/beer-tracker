@@ -14,13 +14,14 @@ import {
   isStickyNoteJiraWebUrl,
   resolveStickyNoteFaviconSources,
 } from '@/lib/comments/stickyNoteLinks';
+import { clientGcTime } from '@/lib/queryGcTime';
 
 const LINK_PREVIEW_STALE_MS = 60 * 60 * 1000;
 const LINK_PREVIEW_GC_MS = 6 * 60 * 60 * 1000;
 
 function useStickyNoteLinkPreview(url: string) {
   return useQuery({
-    gcTime: LINK_PREVIEW_GC_MS,
+    gcTime: clientGcTime(LINK_PREVIEW_GC_MS),
     queryFn: ({ signal }) => fetchLinkPreview(url, signal),
     queryKey: ['link-preview', url],
     staleTime: LINK_PREVIEW_STALE_MS,
