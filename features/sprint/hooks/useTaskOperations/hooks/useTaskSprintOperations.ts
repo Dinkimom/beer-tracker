@@ -20,7 +20,7 @@ import { findTaskById, getActualTaskId } from '../utils/taskUtils';
 import {
   applyOptimisticTaskRemoval,
   collectSprintOperationSnapshot,
-  deletePositionAndLinksAfterMove,
+  resetTargetSprintPlan,
   rollbackOptimisticTaskRemoval,
 } from './taskSprintMove';
 
@@ -42,7 +42,7 @@ export function useTaskSprintOperations({
   setTasks,
   updateXarrow,
 }: UseTaskSprintOperationsProps) {
-  const { deletePosition, setPositionsWithSave: setTaskPositions } = board.positions;
+  const { setPositionsWithSave: setTaskPositions } = board.positions;
   const { t } = useI18n();
   const queryClient = useQueryClient();
 
@@ -88,12 +88,7 @@ export function useTaskSprintOperations({
           await onTasksReload();
         }
         if (shouldRemoveFromCurrent) {
-          await deletePositionAndLinksAfterMove({
-            deleteLink: board.links.delete,
-            deletePosition,
-            snapshot,
-            targetSprintId: sprintId,
-          });
+          await resetTargetSprintPlan(sprintId, snapshot.actualTaskId);
         }
       } catch (error) {
         // Откат только после удаления — иначе отложенное удаление снова скроет карточку.
@@ -104,7 +99,7 @@ export function useTaskSprintOperations({
         throw error;
       }
     },
-    [board, deletePosition, onTasksReload, selectedSprintId, setters, sprints, t, takeSnapshot]
+    [onTasksReload, selectedSprintId, setters, sprints, t, takeSnapshot]
   );
 
   const removeFromSprint = useCallback(
@@ -120,12 +115,6 @@ export function useTaskSprintOperations({
           throw new Error('Failed to remove task from sprint');
         }
         invalidateBacklogQueries(queryClient);
-        await deletePositionAndLinksAfterMove({
-          deleteLink: board.links.delete,
-          deletePosition,
-          snapshot,
-        });
-
         // UI обновляем в конце — иначе задача пропадает со свимлейна
         // ещё при открытом диалоге подтверждения с лоадером. Анимацию не ждём:
         // диалог закрывается, и уход карточки в бэклог виден на доске.
@@ -142,7 +131,7 @@ export function useTaskSprintOperations({
         throw error;
       }
     },
-    [board, deletePosition, queryClient, selectedSprintId, setters, t, takeSnapshot]
+    [queryClient, selectedSprintId, setters, t, takeSnapshot]
   );
 
   return {

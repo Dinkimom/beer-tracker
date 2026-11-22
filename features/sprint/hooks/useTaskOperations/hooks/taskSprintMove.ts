@@ -1,11 +1,10 @@
 /**
  * Уход задачи из спринта (перенос в другой спринт или в бэклог): что запомнить до запроса,
- * как убрать карточку с доски и вернуть её при ошибке, что удалить на сервере после успеха.
+ * как убрать карточку с доски и вернуть её при ошибке. Карточку и стрелки в исходном спринте на
+ * сервере убирает сам сервер (`lib/sprints/issueBoardCards.ts`) — для всех путей переноса.
  */
 
 import type { Task, TaskLink, TaskPosition } from '@/types';
-
-import { plannerLinkInvolvesComment } from '@/lib/planner/plannerLinkPersistence';
 
 type StateUpdater<T> = (updater: (prev: T) => T) => void;
 
@@ -77,43 +76,12 @@ export function rollbackOptimisticTaskRemoval(
 }
 
 /**
- * Удаляет только связи приложения (с участием заметки — они хранятся в `task_links`).
- * Связи задача↔задача приходят из трекера и при переносе в трекере не трогаются.
+ * Задача приходит в целевой спринт без плана (K4): старая позиция там, если была, удаляется.
+ * Карточку и стрелки в исходном спринте убирает сервер, когда трекер снял задачу со спринта.
  */
-export async function deleteLinksAfterMove(
-  linksToDelete: TaskLink[],
-  deleteLink: (linkId: string) => Promise<void>
-): Promise<void> {
-  const plannerLinks = linksToDelete.filter((link) =>
-    plannerLinkInvolvesComment(link.fromTaskId, link.toTaskId)
-  );
-  await Promise.all(
-    plannerLinks.map((link) =>
-      deleteLink(link.id).catch((error) => {
-        console.error('Error deleting link:', error);
-      })
-    )
-  );
-}
-
-/** Следы задачи в исходном спринте (позиция, связи с заметками) и позиция в целевом. Ошибки не мешают переносу. */
-export async function deletePositionAndLinksAfterMove(params: {
-  deleteLink: (linkId: string) => Promise<void>;
-  deletePosition: (taskId: string) => Promise<void>;
-  snapshot: SprintOperationSnapshot;
-  targetSprintId?: number;
-}): Promise<void> {
-  const { actualTaskId, linksToDelete, positionToRemove } = params.snapshot;
-  if (positionToRemove) {
-    await params.deletePosition(actualTaskId).catch((error) => {
-      console.error('Error deleting position:', error);
-    });
-  }
-  await deleteLinksAfterMove(linksToDelete, params.deleteLink);
-  if (params.targetSprintId != null) {
-    const { deleteTaskPosition } = await import('@/lib/beerTrackerApi');
-    await deleteTaskPosition(params.targetSprintId, actualTaskId).catch((error) => {
-      console.error('Error deleting position in target sprint:', error);
-    });
-  }
+export async function resetTargetSprintPlan(targetSprintId: number, actualTaskId: string): Promise<void> {
+  const { deleteTaskPosition } = await import('@/lib/beerTrackerApi');
+  await deleteTaskPosition(targetSprintId, actualTaskId).catch((error) => {
+    console.error('Error deleting position in target sprint:', error);
+  });
 }

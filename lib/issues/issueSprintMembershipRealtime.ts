@@ -5,6 +5,8 @@ import type { TrackerIssue } from '@/types/tracker';
 import { invalidateCache } from '@/lib/cache';
 import { buildTrackerIssueFromProviderIssue } from '@/lib/issueTrackerProvider/yandexTrackerIssueMappingHelpers';
 import { notifySprintRealtimeForSprintIds } from '@/lib/realtime/notifySprintRealtime';
+import { upsertIssueSnapshotsForOrg } from '@/lib/snapshots';
+import { clearIssueCards, closedSprintIdsOf } from '@/lib/sprints/issueBoardCards';
 import { TENANT_ORG_HEADER } from '@/lib/tenantHttpConstants';
 import {
   removeCachedSprintIssue,
@@ -23,9 +25,10 @@ function uniquePositiveSprintIds(sprintIds: readonly number[]): number[] {
   return [...seen];
 }
 
-type MembershipIssueTracker = Pick<IssueTrackerProviderClient, 'getIssue' | 'mapIssueToTask' | 'organizationId'>;
+type MembershipIssueTracker = Pick<IssueTrackerProviderClient, 'getIssue' | 'getSprint' | 'mapIssueToTask' | 'organizationId'>;
 
 interface AddedIssueSnapshot {
+  provider: IssueTrackerIssue['provider'];
   task: Task;
   trackerIssue: TrackerIssue;
 }
@@ -49,6 +52,7 @@ async function loadAddedIssueSnapshot(
     ? await loadTrackerIntegrationForOrganization(organizationId)
     : null;
   return {
+    provider: issue.provider,
     task: issueTracker.mapIssueToTask(issue, integration),
     trackerIssue: buildTrackerIssueFromProviderIssue(issue),
   };
@@ -73,14 +77,18 @@ export async function completeIssueSprintMembershipChange(input: {
     return;
   }
 
-  let addedTask: Task | undefined;
-  if (addedSprintIds.length > 0) {
-    const snapshot = await loadAddedIssueSnapshot(input.issueTracker, input.issueKey, input.request);
-    if (snapshot) {
-      addedTask = snapshot.task;
-      for (const sprintId of addedSprintIds) {
-        upsertCachedSprintIssue(input.issueTracker.organizationId, sprintId, snapshot.trackerIssue);
-      }
+  // Задача из трекера после смены спринта: снимок в Postgres по ней отбирает бэклог — без
+  // обновления бэклог видел бы старый спринт до следующей синхронизации.
+  const snapshot = await loadAddedIssueSnapshot(input.issueTracker, input.issueKey, input.request);
+  if (snapshot) {
+    await upsertIssueSnapshotsForOrg(input.issueTracker.organizationId, [snapshot.trackerIssue], {
+      provider: snapshot.provider,
+    }).catch((error) => console.error('Failed to refresh issue snapshot after sprint change:', error));
+  }
+  const addedTask = addedSprintIds.length > 0 ? snapshot?.task : undefined;
+  if (snapshot && addedSprintIds.length > 0) {
+    for (const sprintId of addedSprintIds) {
+      upsertCachedSprintIssue(input.issueTracker.organizationId, sprintId, snapshot.trackerIssue);
     }
   }
   for (const sprintId of removedSprintIds) {
@@ -96,6 +104,15 @@ export async function completeIssueSprintMembershipChange(input: {
   });
   notifySprintRealtimeForSprintIds(input.request, removedSprintIds, ['tasks'], {
     issueMembership: { action: 'removed', issueKey: input.issueKey },
+  });
+
+  // Задача ушла из незакрытого спринта — её карточка и стрелки с его доски уходят (K4, K8).
+  const closed = await closedSprintIdsOf(input.issueTracker, removedSprintIds);
+  await clearIssueCards({
+    issueKey: input.issueKey,
+    organizationId: input.issueTracker.organizationId,
+    request: input.request,
+    sprintIds: removedSprintIds.filter((sprintId) => !closed.has(sprintId)),
   });
 }
 

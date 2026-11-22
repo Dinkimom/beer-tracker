@@ -8,11 +8,9 @@ import type { IssueTrackerProviderClient } from '@/lib/issueTrackerProvider/type
 import { invalidateCache } from '@/lib/cache';
 import { completeIssueSprintMembershipChange } from '@/lib/issues/issueSprintMembershipRealtime';
 import { getIssueTrackerProviderClientForOrganization } from '@/lib/issueTrackerProvider/clientFactory';
-import { notifySprintRealtime } from '@/lib/realtime/notifySprintRealtime';
-import { deleteTaskLinksForTask } from '@/lib/sprints/taskLinksRepository';
-import { deleteTaskPosition, listTaskPositionSprintIds } from '@/lib/sprints/taskPositionsRepository';
+import { clearIssueCards, closedSprintIdsOf } from '@/lib/sprints/issueBoardCards';
+import { listTaskPositionSprintIds } from '@/lib/sprints/taskPositionsRepository';
 import { TENANT_ORG_HEADER } from '@/lib/tenantHttpConstants';
-import { isTrackerSprintIssuesFrozen } from '@/lib/trackerApi/sprintIssuesCache';
 
 /** Куда перенести: спринт трекера или бэклог (вне спринтов). */
 type IssueSprintMoveTarget = { backlog: true } | { sprintId: number };
@@ -45,23 +43,6 @@ export function sprintsToClearAfterMove(input: {
   );
 }
 
-/** Закрытые спринты среди досок с карточкой; спринт, статус которого трекер не отдал, считаем закрытым — не чистим. */
-async function closedSprintIdsOf(
-  issueTracker: IssueTrackerProviderClient,
-  sprintIds: readonly number[]
-): Promise<Set<number>> {
-  const statuses = await Promise.all(
-    sprintIds.map(async (sprintId) => {
-      try {
-        return { closed: isTrackerSprintIssuesFrozen((await issueTracker.getSprint(sprintId)).status), sprintId };
-      } catch {
-        return { closed: true, sprintId };
-      }
-    })
-  );
-  return new Set(statuses.filter((status) => status.closed).map((status) => status.sprintId));
-}
-
 async function moveOneIssue(input: {
   issueKey: string;
   issueTracker: IssueTrackerProviderClient;
@@ -92,12 +73,7 @@ async function moveOneIssue(input: {
     keepTargetCard: trackerUnchanged,
     targetSprintId,
   });
-  for (const sprintId of cleared) {
-    await deleteTaskPosition({ organizationId, sprintId, taskId: issueKey });
-    // Только стрелки приложения (`task_links`), как в K4; связи задач в трекере не трогаются.
-    await deleteTaskLinksForTask({ organizationId, sprintId, taskId: issueKey });
-    notifySprintRealtime(new Request('http://localhost/api/mcp'), organizationId, sprintId, ['positions', 'links']);
-  }
+  await clearIssueCards({ issueKey, organizationId, request: new Request('http://localhost/api/mcp'), sprintIds: cleared });
   return { clearedSprintIds: cleared, issueKey, ok: true, ...(trackerUnchanged ? { trackerUnchanged } : {}) };
 }
 
