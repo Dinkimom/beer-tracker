@@ -7,8 +7,6 @@ import {
   filterTasksByStatus,
 } from './useTaskFilteringHelpers';
 
-export { isTaskCompleted } from '@/features/task/utils/taskUtils';
-
 interface UseTaskFilteringProps {
   goalTask?: Task | null;
   goalTaskIds?: string[];

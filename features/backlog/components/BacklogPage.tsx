@@ -1,18 +1,19 @@
 'use client';
 
-import type { StatusFilter } from '@/types';
+import type { StatusFilter, Task } from '@/types';
 import type { SprintListItem } from '@/types/tracker';
 
 import { DndContext, DragOverlay, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
 import { useQueryClient } from '@tanstack/react-query';
-import { useMemo, useRef, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import toast from 'react-hot-toast';
 
 import { Button } from '@/components/Button';
 import { Icon } from '@/components/Icon';
 import { useI18n } from '@/contexts/LanguageContext';
+import { patchBacklogTasks, useBacklog } from '@/features/backlog/hooks/useBacklog';
 import { useDemoPlannerBoardsQueryScope } from '@/features/board/demoPlannerBoardsQueryScope';
-import { useBacklogManagement } from '@/features/sidebar/hooks/useBacklogManagement';
+import { filterTasksByName, filterTasksByStatus } from '@/features/task/hooks/useTaskFilteringHelpers';
 import { useSelectedBoardStorage } from '@/hooks/useLocalStorage';
 import { createSprint } from '@/lib/beerTrackerApi';
 
@@ -57,19 +58,27 @@ export function BacklogPage({ lockedBoardId, sprints, sprintsLoading }: BacklogP
   );
 
   const {
-    addTask,
-    backlogDevelopers,
-    backlogLoading,
-    backlogTasks,
-    filteredBacklogTasks,
-    removeTask,
-  } = useBacklogManagement({
-    goalTask: null,
-    mainTab: 'backlog',
-    nameFilter,
-    selectedBoardId: selectedBoardId || undefined,
-    statusFilter,
-  });
+    developers: backlogDevelopers,
+    isLoading: backlogLoading,
+    key: backlogKey,
+    tasks: backlogTasks,
+  } = useBacklog(selectedBoardId ?? null);
+  const filteredBacklogTasks = useMemo(
+    () => filterTasksByStatus(filterTasksByName(backlogTasks, nameFilter), statusFilter),
+    [backlogTasks, nameFilter, statusFilter]
+  );
+  // Оптимистичный перенос: задача сразу появляется в бэклоге или уходит из него.
+  const addTask = useCallback(
+    (task: Task) => {
+      if (backlogTasks.some((item) => item.id === task.id)) return;
+      patchBacklogTasks(queryClient, backlogKey, (tasks) => [...tasks, task]);
+    },
+    [backlogKey, backlogTasks, queryClient]
+  );
+  const removeTask = useCallback(
+    (taskId: string) => patchBacklogTasks(queryClient, backlogKey, (tasks) => tasks.filter((item) => item.id !== taskId)),
+    [backlogKey, queryClient]
+  );
 
   const { activeSprints, archivedSprints } = useMemo(
     () => organizeSprints(sprints),

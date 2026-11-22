@@ -7,6 +7,7 @@ import type { QueryClient } from '@tanstack/react-query';
 
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 
+import { invalidateBacklogQueries } from '@/features/backlog/hooks/useBacklog';
 import { useDemoPlannerBoardsQueryScope } from '@/features/board/demoPlannerBoardsQueryScope';
 import { reconcileFetchedSprintTasks } from '@/features/task/hooks/pendingTaskStatus';
 import { fetchSprintTasks } from '@/lib/beerTrackerApi';
@@ -250,6 +251,8 @@ export function upsertSprintTaskInQueries(
     },
     (old) => upsertTaskInTasksResponse(old, task)
   );
+  // Задача пришла в спринт — возможно, из бэклога.
+  invalidateBacklogQueries(queryClient);
 }
 
 export function removeSprintTaskFromQueries(
@@ -265,6 +268,8 @@ export function removeSprintTaskFromQueries(
     { predicate: (query) => queryKeyTouchesSprintTasks(query.queryKey, sprintId) },
     (old) => removeTaskFromTasksResponse(old, key)
   );
+  // Задача ушла из спринта — возможно, в бэклог.
+  invalidateBacklogQueries(queryClient);
 }
 
 function removeTaskFromTasksResponse(

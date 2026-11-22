@@ -5,10 +5,12 @@
 import type { MoveTasksTo, Task } from '@/types';
 import type { ChecklistItem, SprintInfo, SprintListItem } from '@/types/tracker';
 
+import { useQueryClient } from '@tanstack/react-query';
 import { useEffect, useState, useCallback } from 'react';
 import toast from 'react-hot-toast';
 
 import { useI18n } from '@/contexts/LanguageContext';
+import { invalidateBacklogQueries } from '@/features/backlog/hooks/useBacklog';
 import { useSprintTaskCompletionRules } from '@/hooks/useSprintTaskCompletionRules';
 
 import {
@@ -60,6 +62,7 @@ export function useFinishSprintModal({
   const [selectedSprintId, setSelectedSprintId] = useState<number | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const { t } = useI18n();
+  const queryClient = useQueryClient();
   const completionRules = useSprintTaskCompletionRules();
 
   useEffect(() => {
@@ -121,6 +124,8 @@ export function useFinishSprintModal({
         tasks,
       });
 
+      // Незавершённые задачи ушли в бэклог или в другой спринт.
+      invalidateBacklogQueries(queryClient);
       await closeTrackerGoalTasks(goalTasks, completionRules);
 
       const archived = await archiveSprintOnFinish({
@@ -138,6 +143,7 @@ export function useFinishSprintModal({
     }
   }, [
     completionRules,
+    queryClient,
     sprintInfo,
     moveTasksTo,
     selectedSprintId,

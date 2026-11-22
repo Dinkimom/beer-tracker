@@ -6,10 +6,12 @@
 import type { SprintBoard } from '@/features/sprint/model/SprintBoard';
 import type { Task } from '@/types';
 
+import { useQueryClient } from '@tanstack/react-query';
 import { useCallback, useMemo } from 'react';
 import toast from 'react-hot-toast';
 
 import { useI18n } from '@/contexts/LanguageContext';
+import { invalidateBacklogQueries } from '@/features/backlog/hooks/useBacklog';
 import { playTaskBoardExit } from '@/features/task/utils/taskBoardExit';
 import { addIssueToSprint, removeIssueFromSprint } from '@/lib/beerTrackerApi';
 
@@ -42,6 +44,7 @@ export function useTaskSprintOperations({
 }: UseTaskSprintOperationsProps) {
   const { deletePosition, setPositionsWithSave: setTaskPositions } = board.positions;
   const { t } = useI18n();
+  const queryClient = useQueryClient();
 
   const takeSnapshot = useCallback(
     (taskId: string) => {
@@ -116,6 +119,7 @@ export function useTaskSprintOperations({
         if (!(await removeIssueFromSprint(taskId, selectedSprintId))) {
           throw new Error('Failed to remove task from sprint');
         }
+        invalidateBacklogQueries(queryClient);
         await deletePositionAndLinksAfterMove({
           deleteLink: board.links.delete,
           deletePosition,
@@ -138,7 +142,7 @@ export function useTaskSprintOperations({
         throw error;
       }
     },
-    [board, deletePosition, selectedSprintId, setters, t, takeSnapshot]
+    [board, deletePosition, queryClient, selectedSprintId, setters, t, takeSnapshot]
   );
 
   return {
