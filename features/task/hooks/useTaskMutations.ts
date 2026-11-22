@@ -7,6 +7,7 @@ import toast from 'react-hot-toast';
 
 import { useI18n } from '@/contexts/LanguageContext';
 import { useDemoPlannerBoardsQueryScope } from '@/features/board/demoPlannerBoardsQueryScope';
+import { reconcileFetchedSprintTasks } from '@/features/task/hooks/pendingTaskStatus';
 import { sprintTasksQueryKey } from '@/features/task/hooks/useTasks';
 import { fetchSprintTasks, fetchSprints } from '@/lib/beerTrackerApi';
 
@@ -21,11 +22,15 @@ function applyReloadTasksSuccess(
     forDemoPlanner: boolean;
     sprintId: number | null;
     sprintsData: unknown;
-    tasksData: unknown;
+    tasksData: Awaited<ReturnType<typeof fetchSprintTasks>>;
   }
 ): void {
   const { boardId, forDemoPlanner, sprintId, sprintsData, tasksData } = params;
-  queryClient.setQueryData(sprintTasksQueryKey(sprintId, boardId, forDemoPlanner), tasksData);
+  // Как фоновая подгрузка: несохранённые черновики (быстрое добавление) и ожидающие статусы не стираются.
+  queryClient.setQueryData<typeof tasksData>(
+    sprintTasksQueryKey(sprintId, boardId, forDemoPlanner),
+    (old) => reconcileFetchedSprintTasks(tasksData, old)
+  );
   if (sprintsData && boardId) {
     queryClient.setQueryData(sprintsCacheQueryKey(forDemoPlanner, boardId), sprintsData);
   }

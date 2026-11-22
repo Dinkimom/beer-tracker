@@ -42,6 +42,15 @@ test('TC-029: пустой черновик заметки переживает 
   await page.clock.fastForward(65_000);
   await page.waitForTimeout(1500);
   await expect(draft).toBeVisible();
+
+  // Ручное «Обновить» тоже не стирает черновик.
+  const reload = page.getByRole('button', {
+    name: en.sprintPlanner.controls.reloadFromTracker.replace('{tracker}', 'Yandex Tracker'),
+  });
+  await reload.click();
+  await expect(reload).toBeEnabled();
+  await page.waitForTimeout(500);
+  await expect(draft).toBeVisible();
 });
 
 /**

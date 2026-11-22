@@ -147,8 +147,8 @@
 
 ### TC-029: Пустой черновик заметки не пропадает сам
 - Контур: демо
-- Код: features/task/hooks/pendingTaskStatus.ts, features/task/hooks/useSprintTasksBackgroundRefresh.ts, features/task/hooks/useTasks.ts, lib/layers/application/mobx/stores/taskPositionsStoreLoadHelpers.ts
-- Шаги: выбрать «Заметка», кликнуть по свободной ячейке, ничего не вводить; подождать дольше минуты (фоновое обновление задач) или дождаться правки коллеги (realtime).
+- Код: features/task/hooks/pendingTaskStatus.ts, features/task/hooks/useSprintTasksBackgroundRefresh.ts, features/task/hooks/useTasks.ts, features/task/hooks/useTaskMutations.ts, lib/layers/application/mobx/stores/taskPositionsStoreLoadHelpers.ts
+- Шаги: выбрать «Заметка», кликнуть по свободной ячейке, ничего не вводить; подождать дольше минуты (фоновое обновление задач), дождаться правки коллеги (realtime) или нажать «Обновить задачи» в панели доски.
 - Ожидаемо: черновик остаётся на месте, пока его не сохранят, не удалят или не нажмут Escape.
 - Автотест: e2e/functional/swimlaneNotes.spec.ts
 
