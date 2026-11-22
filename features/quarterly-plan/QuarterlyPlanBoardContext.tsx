@@ -3,10 +3,10 @@
 import type { QuarterBoardMenu } from './model/quarterBoardMenu';
 import type { QuarterBoardRows } from './model/quarterBoardRows';
 import type { QuarterLinkTool } from './model/quarterLinkTool';
+import type { QuarterNoteTool } from './model/quarterNoteTool';
 import type { QuarterPlanView } from './model/quarterPlanView';
 import type { QuarterRowGoalFlag, QuarterRowLevel } from './quarterlyPlanBoardModel';
 import type { QuarterDetailLevel } from './quarterlyPlanDetail';
-import type { StickyNoteColor } from '@/lib/comments/stickyNoteColor';
 import type { McpOAuthClientBrand } from '@/lib/mcp/oauth/resolveMcpOAuthClientBrand';
 import type { QuarterlyPlanDraftDiff } from '@/lib/quarterlyPlans/quarterlyPlanDraftDiff';
 import type { QuarterlyPlanDraftItem } from '@/lib/quarterlyPlans/quarterlyPlanDraftItems';
@@ -89,43 +89,16 @@ export interface QuarterlyPlanBoardContextValue {
   links: QuarterLinkTool;
   /** Меню у точки клика и превью полосы из меню назначения (`QuarterBoardMenu`); читающие — `observer`. */
   menu: QuarterBoardMenu;
-  /** Цвет, которым инструмент «Заметка» поставит следующую заметку. */
-  noteColor: StickyNoteColor;
-  /** Идущий жест над заметкой; null — жеста нет или заметку несут мимо строк. */
-  noteDrag: QuarterlyPlanNoteDrag | null;
-  /** Действия правки заметки: из листа на доске и из режима фокуса. */
-  noteEditActions: {
-    cancel: () => void;
-    color: (color: StickyNoteColor) => void;
-    /** Развернуть в режим фокуса; `value` — текст, набранный в листе. */
-    expand: (value: string) => void;
-    /** Подтвердить правку; пустой текст не сохраняется. */
-    submit: (value: string) => void;
-  };
-  /**
-   * Заметка в правке. `expanded` — развёрнута в режим фокуса, лист на доске скрыт; иначе правится
-   * прямо в листе. `value` — текст, с которого редактор начинает.
-   */
-  noteEditing: { color: StickyNoteColor; expanded: boolean; noteId: string; value: string } | null;
-  /** Заметки по ключу строки (`quarterNoteRowKey`). */
-  notesByRow: ReadonlyMap<string, QuarterlyPlanNote[]>;
-  /** Включён инструмент «Заметка»: клик по неделе любой строки ставит заметку. */
-  noteTool: boolean;
+  /** Заметки: инструмент, правка, жест (`QuarterNoteTool`); читающие — `observer`. */
+  notes: QuarterNoteTool;
+  /** Слой «Заметки» (QN7): скрытые заметки не рисуются и не занимают дорожки строк. */
+  notesVisible: boolean;
   /** Свёрнутое, раскрытое, поле ввода и переход к проблеме (`QuarterBoardRows`); компоненты — `observer`. */
   rows: QuarterBoardRows;
   /** Полосу сдвинули или растянули: срок неделями, у полосы задачи — ещё и днями (QT5). */
   onBarChange: (assignmentId: string, span: Partial<DaySpan> & WeekSpan) => void;
   /** Завершить ввод в открытом поле: название или null, если ввод отменён. */
   onDraftSubmit: (title: string | null) => void;
-  /** Заметку сдвинули, растянули или перенесли в другую строку. */
-  onNoteChange: (
-    noteId: string,
-    patch: Partial<Pick<QuarterlyPlanNote, 'row' | 'rows' | 'startWeek' | 'weeks'>>
-  ) => void;
-  onNoteClick: (noteId: string, anchor: QuarterMenuAnchor) => void;
-  onNoteDelete: (noteId: string) => void;
-  onNoteDrag: (drag: QuarterlyPlanNoteDrag | null) => void;
-  onNotePlace: (row: QuarterlyPlanNoteRow, week: number, anchor: QuarterMenuAnchor) => void;
   /** Строку перетащили: она встаёт перед строкой `anchorId` того же уровня или после неё (QO2, QO3). */
   onRowMove: (level: QuarterRowLevel, id: string, anchorId: string, place: QuarterRowPlace) => void;
   /** Клик по спринту в строке команды: цели спринта в сайдбаре (QG13). */
@@ -206,9 +179,13 @@ export function useQuarterRowNotes(
   row: QuarterlyPlanNoteRow | undefined,
   blockers?: readonly NoteLaneBlocker[]
 ) {
-  const { noteDrag, notesByRow } = useQuarterlyPlanBoard();
-  const notes = (row && notesByRow.get(quarterNoteRowKey(row))) ?? [];
-  const resized = noteDrag?.mode === 'resize' ? noteDrag.note : null;
+  const { notes: tool, notesVisible } = useQuarterlyPlanBoard();
+  const { notesByRow } = useQuarterPlanView();
+  const key = row ? quarterNoteRowKey(row) : null;
+  const draft = tool.draftNote;
+  const saved = key ? (notesByRow.get(key) ?? []) : [];
+  const notes = !notesVisible || !key ? [] : draft && quarterNoteRowKey(draft.row) === key ? [...saved, draft] : saved;
+  const resized = tool.drag?.mode === 'resize' ? tool.drag.note : null;
   const laidOut = resized ? notes.map((note) => (note.id === resized.id ? resized : note)) : notes;
   const { laneById } = assignNoteLanes(laidOut, blockers);
   const laneCount = Math.max(0, ...laidOut.map((note) => (laneById.get(note.id) ?? 0) + note.rows));

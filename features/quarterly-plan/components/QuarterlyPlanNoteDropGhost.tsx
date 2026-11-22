@@ -3,6 +3,8 @@
 import type { NoteLaneBlocker } from '@/lib/quarterlyPlans/quarterlyPlanLayout';
 import type { QuarterlyPlanNote, QuarterlyPlanNoteRow } from '@/lib/quarterlyPlans/quarterlyPlanTypes';
 
+import { observer } from 'mobx-react-lite';
+
 import { ZIndex } from '@/constants';
 import {
   getStickyNoteDashedGhostStyle,
@@ -36,14 +38,14 @@ interface QuarterlyPlanNoteDropGhostProps {
  * тонкая черта на уровне, с которого она начнётся. Превью высоту строки не меняет: доска
  * под курсором не прыгает.
  */
-export function QuarterlyPlanNoteDropGhost({
+export const QuarterlyPlanNoteDropGhost = observer(function QuarterlyPlanNoteDropGhost({
   blockers,
   noteRow,
   notes,
   rowHeightPx,
   topPx,
 }: QuarterlyPlanNoteDropGhostProps) {
-  const { noteDrag } = useQuarterlyPlanBoard();
+  const { drag: noteDrag } = useQuarterlyPlanBoard().notes;
   const { weeks } = useQuarterPlanView();
   const laneHeightPx = useQuarterLaneHeight();
   const isDark = useDocumentDarkClass();
@@ -86,4 +88,4 @@ export function QuarterlyPlanNoteDropGhost({
       }}
     />
   );
-}
+});

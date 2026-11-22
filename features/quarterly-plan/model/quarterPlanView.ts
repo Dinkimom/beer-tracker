@@ -7,14 +7,14 @@
 
 import type { MemberAbsence } from '../quarterlyPlanBoardModel';
 import type { QuarterlyPlanIssue } from '@/lib/quarterlyPlans/quarterlyPlanIssues';
-import type { QuarterlyPlan, QuarterlyPlanAssignment, QuarterlyPlanEpic, QuarterlyPlanLink } from '@/lib/quarterlyPlans/quarterlyPlanTypes';
+import type { QuarterlyPlan, QuarterlyPlanAssignment, QuarterlyPlanEpic, QuarterlyPlanLink, QuarterlyPlanNote } from '@/lib/quarterlyPlans/quarterlyPlanTypes';
 import type { QuarterWeek } from '@/lib/quarterlyPlans/quarterWeeks';
 import type { Developer } from '@/types';
 import type { BoardAvailabilityEvent } from '@/types/quarterly';
 
 import { formatLocalDateToIsoDateOnly } from '@/lib/isoDateOnlyCalendar';
 import { collectQuarterlyPlanIssues } from '@/lib/quarterlyPlans/quarterlyPlanIssues';
-import { epicTitle, orderLinkEnds, violatedBlockersByAssignment } from '@/lib/quarterlyPlans/quarterlyPlanLayout';
+import { epicTitle, orderLinkEnds, quarterNoteRowKey, violatedBlockersByAssignment } from '@/lib/quarterlyPlans/quarterlyPlanLayout';
 import { collectUnsplitDirectionIds } from '@/lib/quarterlyPlans/quarterlyPlanPhases';
 import { epicRowIds, rivalAssignments, tasksByEpic } from '@/lib/quarterlyPlans/quarterlyPlanRows';
 import { QUARTER_WORKING_DAYS_PER_WEEK, weekIndexOfDate } from '@/lib/quarterlyPlans/quarterWeeks';
@@ -88,6 +88,18 @@ export class QuarterPlanView {
     const source = this.plan.assignments.find((assignment) => assignment.id === sourceId);
     const target = this.plan.assignments.find((assignment) => assignment.id === targetId);
     return source && target ? orderLinkEnds(source, target) : null;
+  }
+
+  /** Заметки плана по ключу строки (`quarterNoteRowKey`). */
+  get notesByRow(): ReadonlyMap<string, QuarterlyPlanNote[]> {
+    return this.once('notesByRow', () => {
+      const groups = new Map<string, QuarterlyPlanNote[]>();
+      for (const note of this.plan.notes) {
+        const key = quarterNoteRowKey(note.row);
+        groups.set(key, [...(groups.get(key) ?? []), note]);
+      }
+      return groups;
+    });
   }
 
   /** Привязанные эпики трекера по ключу: название, статус, «сделано» (QE5, QE7). */

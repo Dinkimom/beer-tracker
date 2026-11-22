@@ -17,10 +17,9 @@ import { Icon } from '@/components/Icon';
 import { ZIndex } from '@/constants';
 import { useI18n } from '@/contexts/LanguageContext';
 import { FLOATING_TOOLBAR_GLASS } from '@/features/context-menu/contextMenuClasses';
-import { TaskBarNoteFocusEditor } from '@/features/task/components/TaskBar/TaskBarNoteFocusEditor';
 import { useEscapeKey } from '@/hooks/useEscapeKey';
 import { useHeightCssVar } from '@/hooks/useHeightCssVar';
-import { useQuarterHideDoneStorage } from '@/hooks/useLocalStorage';
+import { useQuarterHideDoneStorage, useQuarterNotesVisibleStorage } from '@/hooks/useLocalStorage';
 import {
   planIssueKeys,
   removeDirection,
@@ -40,6 +39,7 @@ import { QuarterlyPlanBoard } from './components/QuarterlyPlanBoard';
 import { QuarterlyPlanBoardMenu } from './components/QuarterlyPlanBoardMenu';
 import { QuarterlyPlanHeader } from './components/QuarterlyPlanHeader';
 import { QuarterlyPlanHistorySidebar } from './components/QuarterlyPlanHistorySidebar';
+import { QuarterlyPlanNoteFocus } from './components/QuarterlyPlanNoteFocus';
 import { QuarterlyPlanSprintGoals } from './components/QuarterlyPlanSprintGoals';
 import { QuarterlyPlanSprintSyncDialog } from './components/QuarterlyPlanSprintSyncDialog';
 import { QuarterlyPlanToolbar } from './components/QuarterlyPlanToolbar';
@@ -47,6 +47,7 @@ import { QuarterlyPlanTrackerEpicDialog } from './components/QuarterlyPlanTracke
 import { QuarterBoardMenu } from './model/quarterBoardMenu';
 import { applyDraftTitle, QuarterBoardRows } from './model/quarterBoardRows';
 import { type QuarterEditPort, QuarterLinkTool } from './model/quarterLinkTool';
+import { QuarterNoteTool } from './model/quarterNoteTool';
 import { QuarterPlanView } from './model/quarterPlanView';
 import { QuarterlyPlanBoardProvider, QuarterPlanViewProvider } from './QuarterlyPlanBoardContext';
 import { applyTrackerPickToPlan, trackerPickBoardId } from './quarterlyPlanMenuSections';
@@ -55,7 +56,6 @@ import { useQuarterDetail } from './useQuarterDetail';
 import { useQuarterlyPlan } from './useQuarterlyPlan';
 import { useQuarterlyPlanAgent, useQuarterlyPlanDraftPreview } from './useQuarterlyPlanAgent';
 import { useQuarterlyPlanHistory, useQuarterlyPlanShownView } from './useQuarterlyPlanHistory';
-import { useQuarterlyPlanNotes } from './useQuarterlyPlanNotes';
 import { useQuarterlyPlanRowGoals } from './useQuarterlyPlanRowGoals';
 import { useQuarterlyPlanSprintSync } from './useQuarterlyPlanSprintSync';
 import { useQuarterlyPlanTrackerStatus } from './useQuarterlyPlanTrackerStatus';
@@ -82,6 +82,7 @@ export const QuarterlyPlanPage = observer(function QuarterlyPlanPage() {
   /** Инструментам — план и запись на момент действия: на доске может быть версия из истории или черновик агента. */
   const port = useRef<QuarterEditPort>(NO_EDIT_PORT);
   const [links] = useState(() => new QuarterLinkTool(() => port.current));
+  const [notes] = useState(() => new QuarterNoteTool(() => port.current));
   const [todayNonce, setTodayNonce] = useState(0);
   const [frameEl, setFrameEl] = useState<HTMLDivElement | null>(null);
   const [controlsEl, setControlsEl] = useState<HTMLDivElement | null>(null);
@@ -118,7 +119,8 @@ export const QuarterlyPlanPage = observer(function QuarterlyPlanPage() {
   const { detail, setDetail } = useQuarterDetail(plan?.epics, rows, links);
 
   const weeks = useMemo(() => buildQuarterWeeks(quarterRef), [quarterRef]);
-  const notes = useQuarterlyPlanNotes({ applyEdit, plan, weekCount: weeks.length });
+  /** Слой «Заметки» (QN7): запоминается в браузере. */
+  const [notesVisible, setNotesVisible] = useQuarterNotesVisibleStorage();
   const rowGoals = useQuarterlyPlanRowGoals(plan, weeks);
   const sprintSync = useQuarterlyPlanSprintSync({ applyEdit, plan, refreshSprintCards, weeks });
   const confirmLinkDelete = useCallback(
@@ -143,6 +145,12 @@ export const QuarterlyPlanPage = observer(function QuarterlyPlanPage() {
     port.current = { applyEdit, confirmLinkDelete, view };
   }, [applyEdit, confirmLinkDelete, view]);
   useEscapeKey(links.escape, { enabled: links.armed });
+  useEscapeKey(() => notes.setActive(false), { enabled: notes.active });
+  /** Инструмент «Заметка» ставит новый лист — с выключенным слоем его не было бы видно, поэтому слой включается. */
+  const setNoteTool = (active: boolean) => {
+    notes.setActive(active);
+    if (active) setNotesVisible(true);
+  };
 
   const submitDraft = useCallback(
     (title: string | null) => {
@@ -152,7 +160,6 @@ export const QuarterlyPlanPage = observer(function QuarterlyPlanPage() {
     [applyEdit, rows]
   );
 
-  const notesBoard = notes.board;
   const board = useMemo<QuarterlyPlanBoardContextValue | null>(() => {
     if (!plan) return null;
     return {
@@ -161,7 +168,8 @@ export const QuarterlyPlanPage = observer(function QuarterlyPlanPage() {
       goalsByRow: rowGoals,
       hideDone,
       links,
-      ...notesBoard,
+      notes,
+      notesVisible,
       onBarChange: (assignmentId, span) =>
         applyEdit((content) => updateAssignment(content, assignmentId, span)),
       onDraftSubmit: submitDraft,
@@ -175,7 +183,7 @@ export const QuarterlyPlanPage = observer(function QuarterlyPlanPage() {
       draftMarks: shownView.marks,
       draftReview: shownView.review,
     };
-  }, [applyEdit, shownView.marks, shownView.review, openSprintGoals, detail, hideDone, changeTrackerStatus, rowGoals, links, menu, notesBoard, plan, rows, submitDraft]);
+  }, [applyEdit, shownView.marks, shownView.review, openSprintGoals, detail, hideDone, changeTrackerStatus, rowGoals, links, menu, notes, notesVisible, plan, rows, submitDraft]);
 
   const confirmThen = (message: string, action: () => void) => {
     confirm(message, { variant: 'destructive' })
@@ -258,14 +266,7 @@ export const QuarterlyPlanPage = observer(function QuarterlyPlanPage() {
               />
             </QuarterlyPlanPresence>
             <QuarterlyPlanBoardMenu actions={rowActions} applyEdit={applyEdit} />
-            {notes.focusEditor ? (
-              <TaskBarNoteFocusEditor
-                developers={plan.teams.flatMap((team) => team.members)}
-                editor={{ ...notes.focusEditor.editor, placeholder: t('comments.placeholder') }}
-                getAnchor={notes.focusEditor.getAnchor}
-                onCollapse={notes.focusEditor.onCollapse}
-              />
-            ) : null}
+            <QuarterlyPlanNoteFocus />
             {trackerPick ? (
               <QuarterlyPlanTrackerEpicDialog
                 boardId={trackerPickBoardId(plan, trackerPick)}
@@ -301,20 +302,20 @@ export const QuarterlyPlanPage = observer(function QuarterlyPlanPage() {
           }
           hideDone={hideDone}
           linkTool={links.armed}
-          noteColor={notes.noteColor}
-          noteTool={notes.noteTool}
-          notesVisible={notes.notesVisible}
+          noteColor={notes.color}
+          noteTool={notes.active}
+          notesVisible={notesVisible}
           onHideDoneChange={setHideDone}
           onLinkToolChange={(active) => {
             links.setArmed(active);
-            if (active) notes.setNoteTool(false);
+            if (active) setNoteTool(false);
           }}
-          onNoteColorChange={notes.setNoteColor}
+          onNoteColorChange={notes.setColor}
           onNoteToolChange={(active) => {
-            notes.setNoteTool(active);
+            setNoteTool(active);
             if (active) links.setArmed(false);
           }}
-          onNotesVisibleChange={notes.setNotesVisible}
+          onNotesVisibleChange={setNotesVisible}
         />
       </div>
       <QuarterlyPlanHistorySidebar

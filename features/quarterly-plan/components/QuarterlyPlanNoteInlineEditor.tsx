@@ -2,6 +2,7 @@
 
 import type { QuarterlyPlanNote } from '@/lib/quarterlyPlans/quarterlyPlanTypes';
 
+import { observer } from 'mobx-react-lite';
 import { useEffect, useEffectEvent, useRef, useState } from 'react';
 
 import { ZIndex } from '@/constants';
@@ -30,9 +31,11 @@ interface QuarterlyPlanNoteInlineEditorProps {
  * под листом (цвет, развернуть в режим фокуса, подтвердить, отменить). ⌘/Ctrl+Enter и клик мимо
  * сохраняют, Escape отменяет; пустой текст не сохраняется.
  */
-export function QuarterlyPlanNoteInlineEditor({ lane, note, topPx }: QuarterlyPlanNoteInlineEditorProps) {
+export const QuarterlyPlanNoteInlineEditor = observer(function QuarterlyPlanNoteInlineEditor({ lane, note, topPx }: QuarterlyPlanNoteInlineEditorProps) {
   const { t } = useI18n();
-  const { noteEditActions, noteEditing } = useQuarterlyPlanBoard();
+  const { notes } = useQuarterlyPlanBoard();
+  const { editing: noteEditing } = notes;
+  const noteEditActions = { cancel: notes.cancel, color: notes.setColor, expand: notes.expand, submit: notes.submit };
   const { memberById, weeks } = useQuarterPlanView();
   const laneHeightPx = useQuarterLaneHeight();
   const isDark = useDocumentDarkClass();
@@ -87,4 +90,4 @@ export function QuarterlyPlanNoteInlineEditor({ lane, note, topPx }: QuarterlyPl
       />
     </div>
   );
-}
+});

@@ -4,6 +4,8 @@ import type { QuarterMenuAnchor } from '../QuarterlyPlanBoardContext';
 import type { DaySpan } from '@/lib/quarterlyPlans/quarterlyPlanLayout';
 import type { QuarterlyPlanNoteRow } from '@/lib/quarterlyPlans/quarterlyPlanTypes';
 
+import { observer } from 'mobx-react-lite';
+
 import { Icon } from '@/components/Icon';
 import { ZIndex } from '@/constants';
 import { useI18n } from '@/contexts/LanguageContext';
@@ -43,14 +45,15 @@ interface QuarterlyPlanWeekCellsProps {
  * Кликабельные недели строки: при наведении показывают «+». Обычно клик — действие самой строки
  * по свободной неделе. С инструментом «Заметка» кликабельна любая неделя, и ячейки лежат поверх полос.
  */
-export function QuarterlyPlanWeekCells({
+export const QuarterlyPlanWeekCells = observer(function QuarterlyPlanWeekCells({
   actionLabel = '',
   noteRow,
   occupiedDays,
   onWeekClick,
 }: QuarterlyPlanWeekCellsProps) {
   const { t } = useI18n();
-  const { noteColor, noteTool, onNotePlace } = useQuarterlyPlanBoard();
+  const { notes } = useQuarterlyPlanBoard();
+  const { color: noteColor, active: noteTool } = notes;
   const { weeks } = useQuarterPlanView();
   const laneHeightPx = useQuarterLaneHeight();
   const isDark = useDocumentDarkClass();
@@ -64,7 +67,7 @@ export function QuarterlyPlanWeekCells({
           weeks,
           zIndex: ZIndex.contentInteractive + 1,
           free: (week: number): DaySpan | null => freeDaysOfWeek(week, undefined),
-          onClick: (week: number, anchor: QuarterMenuAnchor) => onNotePlace(noteRow, week, anchor),
+          onClick: (week: number) => notes.place(noteRow, week),
         }
       : {
           label: actionLabel,
@@ -116,4 +119,4 @@ export function QuarterlyPlanWeekCells({
     </button>
     );
   });
-}
+});

@@ -167,3 +167,40 @@ test('TC-127: инструмент «Связь» ставит и удаляет
   await expect(tool).toHaveAttribute('aria-pressed', 'false');
   await expect(deleteButtons).toHaveCount(0);
 });
+
+test('TC-128: заметка ставится инструментом, правится через режим фокуса и удаляется', async ({ page }) => {
+  const team = await openRoadmap(page);
+  const tool = page.getByRole('button', { exact: true, name: q.noteTool });
+  const toolbar = en.sprintPlanner.swimlane.placementToolbar;
+
+  await tool.click();
+  await expect(tool).toHaveAttribute('aria-pressed', 'true');
+  await team.getByRole('button', { name: `${q.notePlaceWeek} 09–13.11` }).first().click();
+  // Инструмент отпускается после одной заметки; правка идёт прямо в листе.
+  await expect(tool).toHaveAttribute('aria-pressed', 'false');
+  // Редактор листа (TipTap) поднимается не сразу и сам ставит курсор в текст.
+  const editor = page.locator('[contenteditable="true"]');
+  await expect(editor).toBeFocused();
+  await page.keyboard.type('Freeze window');
+  await page.getByRole('button', { exact: true, name: en.common.confirm }).click();
+  const note = team.getByRole('button', { name: 'Freeze window' });
+  await expect(note).toBeVisible();
+
+  await note.click();
+  await expect(editor).toBeFocused();
+  await page.getByRole('button', { name: toolbar.noteExpand }).click();
+  await expect(editor).toBeFocused();
+  await page.keyboard.press('End');
+  await page.keyboard.type(' until Friday');
+  await page.getByRole('button', { name: toolbar.noteCollapse }).click();
+  // Режим фокуса уезжает обратно в лист: подтверждаем, когда правка снова в листе на доске.
+  await expect(team.locator('[data-quarter-note] [contenteditable="true"]')).toHaveText('Freeze window until Friday');
+  await expect(page.getByRole('button', { name: toolbar.noteCollapse })).toHaveCount(0);
+  await page.getByRole('button', { exact: true, name: en.common.confirm }).click();
+  const edited = team.getByRole('button', { name: 'Freeze window until Friday' });
+  await expect(edited).toBeVisible();
+
+  await edited.hover();
+  await edited.getByRole('button', { name: en.comments.deleteAria }).click();
+  await expect(edited).toHaveCount(0);
+});

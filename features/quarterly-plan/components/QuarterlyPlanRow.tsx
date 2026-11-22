@@ -140,7 +140,8 @@ export const QuarterlyPlanRow = observer(function QuarterlyPlanRow({
   weekActionLabel,
   onWeekClick,
 }: QuarterlyPlanRowProps) {
-  const { detail, goalsByRow, menu, noteEditing } = useQuarterlyPlanBoard();
+  const { detail, goalsByRow, menu, notes } = useQuarterlyPlanBoard();
+  const { editing: noteEditing } = notes;
   const { assignPreview } = menu;
   const { currentWeek, weeks } = useQuarterPlanView();
   const dayGrid = DAY_GRID_BY_DETAIL[detail];

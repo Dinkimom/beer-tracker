@@ -436,6 +436,13 @@
 - Ожидаемо: между полосами появляется стрелка, инструмент остаётся включённым; после подтверждения стрелка пропадает; первый Escape снимает выбор полосы, второй выключает инструмент.
 - Автотест: e2e/functional/quarterlyPlan.spec.ts
 
+### TC-128: Заметки роадмапа
+- Контур: демо
+- Код: features/quarterly-plan/model/quarterNoteTool.ts, features/quarterly-plan/components/QuarterlyPlanNoteChip.tsx, features/quarterly-plan/components/QuarterlyPlanNoteInlineEditor.tsx, features/quarterly-plan/components/QuarterlyPlanNoteFocus.tsx, features/quarterly-plan/components/QuarterlyPlanWeekCells.tsx
+- Шаги: включить «Заметка», нажать на неделю строки, ввести текст, подтвердить; открыть заметку, развернуть в режим фокуса, дописать, вернуть на доску, подтвердить; удалить заметку.
+- Ожидаемо: после клика по неделе инструмент выключается и на доске открыт лист с курсором; подтверждённая заметка остаётся на доске; дописанное в режиме фокуса возвращается в лист и сохраняется; удалённая заметка пропадает.
+- Автотест: e2e/functional/quarterlyPlan.spec.ts
+
 ### TC-125: Черновик агента
 - Контур: боевой
 - Код: features/quarterly-plan/useQuarterlyPlanAgent.ts, features/quarterly-plan/components/QuarterlyPlanAgentIsland.tsx, features/quarterly-plan/components/QuarterlyPlanDraftBar.tsx

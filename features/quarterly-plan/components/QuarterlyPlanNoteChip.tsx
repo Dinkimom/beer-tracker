@@ -2,6 +2,7 @@
 
 import type { QuarterlyPlanNote, QuarterlyPlanNoteRow } from '@/lib/quarterlyPlans/quarterlyPlanTypes';
 
+import { observer } from 'mobx-react-lite';
 import { useState } from 'react';
 
 import { OverflowTooltip } from '@/components/OverflowTooltip';
@@ -73,9 +74,10 @@ function noteRowAtPoint(x: number, y: number, dragged: HTMLElement | null): Quar
  * жест. Сам стикер несут за курсором в любую строку (команда, отпуска, направление, эпик): строка
  * под курсором показывает место, куда он встанет. Отпустили мимо строк — заметка возвращается на место.
  */
-export function QuarterlyPlanNoteChip({ lane, note, topPx }: QuarterlyPlanNoteChipProps) {
+export const QuarterlyPlanNoteChip = observer(function QuarterlyPlanNoteChip({ lane, note, topPx }: QuarterlyPlanNoteChipProps) {
   const { t } = useI18n();
-  const { draftMarks, draftReview, noteEditing, onNoteChange, onNoteClick, onNoteDelete, onNoteDrag } = useQuarterlyPlanBoard();
+  const { draftMarks, draftReview, notes } = useQuarterlyPlanBoard();
+  const { editing: noteEditing, change: onNoteChange, remove: onNoteDelete, setDrag: onNoteDrag } = notes;
   const { weeks } = useQuarterPlanView();
   const laneHeightPx = useQuarterLaneHeight();
   const isDark = useDocumentDarkClass();
@@ -105,7 +107,7 @@ export function QuarterlyPlanNoteChip({ lane, note, topPx }: QuarterlyPlanNoteCh
         onNoteChange(note.id, next);
       }
     },
-    onClick: (pointer) => onNoteClick(note.id, pointer),
+    onClick: () => notes.open(note.id),
     onEnd: () => {
       setOwnGesture(null);
       onNoteDrag(null);
@@ -194,4 +196,4 @@ export function QuarterlyPlanNoteChip({ lane, note, topPx }: QuarterlyPlanNoteCh
       <QuarterlyPlanDraftItemToolbar hidden={drag !== null} id={note.id} placement="below" />
     </div>
   );
-}
+});
