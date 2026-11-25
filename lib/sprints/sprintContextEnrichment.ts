@@ -125,7 +125,7 @@ function issueTypeLabel(issue: IssueTrackerIssue): string | null {
   return key || null;
 }
 
-function mapSprintHistory(
+export function mapSprintHistory(
   sprint: IssueTrackerIssue['sprint']
 ): Array<{ name: string; sprintId: string }> {
   if (!sprint) {

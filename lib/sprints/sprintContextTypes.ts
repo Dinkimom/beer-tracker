@@ -136,6 +136,49 @@ export interface SprintContextTaskLink {
   toTaskId: string;
 }
 
+/** Другая сторона зависимости задачи спринта. */
+export interface SprintContextDependencyTarget {
+  assigneeName?: string;
+  /** null — статус неизвестен (трекер не ответил). */
+  done: boolean | null;
+  inThisSprint: boolean;
+  /** Своя фраза трекера для связи без канонического типа («has to be done after»). */
+  label?: string;
+  /** Последний рабочий день карточки на доске (этого или другого спринта), YYYY-MM-DD. */
+  plannedEnd?: string;
+  plannedStart?: string;
+  /**
+   * Только у незакрытой задачи, которую ждут: not_planned — её нет ни на одной доске,
+   * ends_after_start — по плану кончается в день начала ждущей задачи или позже.
+   */
+  risk?: 'ends_after_start' | 'not_planned';
+  /** Спринт трекера, где задача сейчас (только для задач вне этого спринта). */
+  sprint?: { name: string; sprintId: number; status?: string };
+  statusCategory?: string;
+  summary?: string;
+  taskId: string;
+  /** Откуда связь: tracker — связь в трекере, board — стрелка на доске. */
+  via: Array<'board' | 'tracker'>;
+}
+
+export interface SprintContextTaskDependencies {
+  /** Задачи, которые ждут эту. */
+  blocks: SprintContextDependencyTarget[];
+  /** Связаны без порядка (relates и свои фразы трекера). */
+  relates: SprintContextDependencyTarget[];
+  taskId: string;
+  /** Что эта задача ждёт. */
+  waitsFor: SprintContextDependencyTarget[];
+}
+
+export interface SprintContextDependencies {
+  /** Только задачи, у которых есть связи. */
+  tasks: SprintContextTaskDependencies[];
+  /** Задачи спринта, которые ждут незакрытое вне спринта. */
+  waitingOutside: Array<{ taskId: string; waitsFor: string[] }>;
+  warnings?: string[];
+}
+
 export interface SprintContextGoalItem {
   done: boolean;
   id: string;

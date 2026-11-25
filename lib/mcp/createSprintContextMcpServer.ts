@@ -19,6 +19,7 @@ import { registerSprintMoveMcpTools } from '@/lib/mcp/registerSprintMoveMcpTools
 import { registerTeamCompositionMcpTools } from '@/lib/mcp/registerTeamCompositionMcpTools';
 import { searchIssuesForOrganization } from '@/lib/mcp/searchIssuesForOrganization';
 import { searchSprintsForOrganization } from '@/lib/mcp/searchSprintsForOrganization';
+import { loadSprintContextDependencies } from '@/lib/sprints/loadSprintContextDependencies';
 import { buildSprintContextCapacity } from '@/lib/sprints/sprintContextCapacity';
 import { SprintPlanPatchOpsSchema } from '@/lib/sprints/sprintPlanPatchSchema';
 import {
@@ -95,7 +96,7 @@ export function createSprintContextMcpServer(input: {
     'get_sprint_context',
     {
       description:
-        'Read-only Beer Tracker planning graph for a sprint: positions (day/part + planVsActual + schedule + status/statusCategory/sprintHistory; inTrackerSprint=false = the card is on this board but the tracker has the issue in another sprint — not work of this sprint), capacity (tasks only; sticky notes do not reserve time), unplannedTasks (issues in the tracker sprint with no position on the board yet — the sprint backlog in the planner; same statusCategory/assignee fields; place them with propose_plan_patch upsertPosition), teamMembers (board roster with role=developer|tester|other, roleTitle, platforms), feature lanes, notes, links, goals, availability. positions and sprintGoals are the committed board. meta.boardVersion is the layout version of the whole board (ignores the filters of this call): other people edit the board while you work, so read the context again right before each propose_plan_patch and pass it there as ifBoardVersion. pendingProposal, when present, is an unconfirmed propose_plan_patch (translucent cards): positions[].beforeSchedule→afterSchedule and goals[].beforeText→afterText. sprintGoals items carry planRow {year, quarter, rowId} when the goal is linked to a quarterly plan epic or direction — it is then shown in that row on the quarterly board. Draft notes are notes[] with pendingApproval=true. notes[] carry width (parts from day/part), height (swimlane rows) and color (text notes) — see meta.legend.note; notes of one assignee that overlap in time get stacked into extra rows. Drafts are private: pendingProposal is only your own draft; agentSession is the session it belongs to (openComments = 💬 waiting for your reply — read them with get_agent_session). Prefer assigneeId/taskIds to keep the payload small. Filter “in work” via statusCategory (not-started|in-progress|paused|done), not raw statusType. meta.calendarDays are Mon–Fri columns (day index). meta.today = {date, day, relation}: day is today’s day index (null on a weekend or outside the sprint), relation = before_sprint|in_sprint|after_sprint. positions[].schedule is where the task should be today by the board plan: state scheduled (window ahead) | due_today (starts today) | in_window (started earlier, runs now) | overdue (window ended, not done) | done; partsLeft = planned parts from the start of today; notStartedForDays = still not started although the plan has run that many working days — use it, not planVsActual.slippedParts, to spot late starts. meta.weekendDays are Sat/Sun with no day index — do not plan there. meta.holidayCountry is the org Settings → Holiday calendar country; meta.holidayDays are that calendar’s non-working weekdays (same day index, unavailable in capacity). quarter (when the org has a saved quarterly plan for the sprint dates): team = the board’s team in the plan; plans[] per quarter the sprint touches with weeks, assignments (person × plan epic in the sprint weeks, with dates; endsInSprint = the assignment ends within this sprint, so the plan expects the epic finished here; taskIds = that person’s sprint tasks of the epic — empty means the plan expects work the sprint does not have), epics/directions (title, issueKey, done), tasks (sprint task → plan epicId/directionId: the task is the plan epic or its child, or a child of the direction’s tracker epic), outsidePlan (a person’s sprint tasks outside their planned epics and directions), pendingProposal (your own unaccepted propose_quarterly_plan draft: after = the same assignments/epics/tasks/outsidePlan as if the person accepted it; added/changed/removed = ids of assignments, epics and directions in the sprint weeks that the draft adds, changes or takes out; error = it no longer applies). Use it to plan the sprint from the roadmap and to flag drift; change the quarter only via propose_quarterly_plan (ifVersion = plans[].version). Requires numeric tracker sprintId — call search_sprints first if only a name is known.',
+        'Read-only Beer Tracker planning graph for a sprint: positions (day/part + planVsActual + schedule + status/statusCategory/sprintHistory; inTrackerSprint=false = the card is on this board but the tracker has the issue in another sprint — not work of this sprint), capacity (tasks only; sticky notes do not reserve time), unplannedTasks (issues in the tracker sprint with no position on the board yet — the sprint backlog in the planner; same statusCategory/assignee fields; place them with propose_plan_patch upsertPosition), teamMembers (board roster with role=developer|tester|other, roleTitle, platforms), feature lanes, notes, links, goals, availability. positions and sprintGoals are the committed board. meta.boardVersion is the layout version of the whole board (ignores the filters of this call): other people edit the board while you work, so read the context again right before each propose_plan_patch and pass it there as ifBoardVersion. pendingProposal, when present, is an unconfirmed propose_plan_patch (translucent cards): positions[].beforeSchedule→afterSchedule and goals[].beforeText→afterText. sprintGoals items carry planRow {year, quarter, rowId} when the goal is linked to a quarterly plan epic or direction — it is then shown in that row on the quarterly board. Draft notes are notes[] with pendingApproval=true. notes[] carry width (parts from day/part), height (swimlane rows) and color (text notes) — see meta.legend.note; notes of one assignee that overlap in time get stacked into extra rows. Drafts are private: pendingProposal is only your own draft; agentSession is the session it belongs to (openComments = 💬 waiting for your reply — read them with get_agent_session). Prefer assigneeId/taskIds to keep the payload small. Filter “in work” via statusCategory (not-started|in-progress|paused|done), not raw statusType. meta.calendarDays are Mon–Fri columns (day index). meta.today = {date, day, relation}: day is today’s day index (null on a weekend or outside the sprint), relation = before_sprint|in_sprint|after_sprint. positions[].schedule is where the task should be today by the board plan: state scheduled (window ahead) | due_today (starts today) | in_window (started earlier, runs now) | overdue (window ended, not done) | done; partsLeft = planned parts from the start of today; notStartedForDays = still not started although the plan has run that many working days — use it, not planVsActual.slippedParts, to spot late starts. meta.weekendDays are Sat/Sun with no day index — do not plan there. meta.holidayCountry is the org Settings → Holiday calendar country; meta.holidayDays are that calendar’s non-working weekdays (same day index, unavailable in capacity). quarter (when the org has a saved quarterly plan for the sprint dates): team = the board’s team in the plan; plans[] per quarter the sprint touches with weeks, assignments (person × plan epic in the sprint weeks, with dates; endsInSprint = the assignment ends within this sprint, so the plan expects the epic finished here; taskIds = that person’s sprint tasks of the epic — empty means the plan expects work the sprint does not have), epics/directions (title, issueKey, done), tasks (sprint task → plan epicId/directionId: the task is the plan epic or its child, or a child of the direction’s tracker epic), outsidePlan (a person’s sprint tasks outside their planned epics and directions), pendingProposal (your own unaccepted propose_quarterly_plan draft: after = the same assignments/epics/tasks/outsidePlan as if the person accepted it; added/changed/removed = ids of assignments, epics and directions in the sprint weeks that the draft adds, changes or takes out; error = it no longer applies). Use it to plan the sprint from the roadmap and to flag drift; change the quarter only via propose_quarterly_plan (ifVersion = plans[].version). include: ["dependencies"] adds dependencies: tasks[] (only sprint tasks that have links) with waitsFor (what the task waits for: tracker blocked_by + board arrows into it), blocks (who waits for it) and relates; each side carries via (tracker|board), inThisSprint, done, statusCategory, sprint (the tracker sprint it is in now, when outside this one) and plannedStart/plannedEnd from its card on that sprint’s board; risk = not_planned (unfinished and on no board) or ends_after_start (finishes on or after the day the waiting task starts). waitingOutside lists sprint tasks waiting for unfinished work outside the sprint. Board arrows exist only within one sprint, so cross-sprint dependencies come from tracker links. Requires numeric tracker sprintId — call search_sprints first if only a name is known.',
       inputSchema: {
         assigneeId: z
           .string()
@@ -106,6 +107,12 @@ export function createSprintContextMcpServer(input: {
           .string()
           .optional()
           .describe('Optional feature lane id or tracker feature key to narrow the graph'),
+        include: z
+          .array(z.enum(['dependencies']))
+          .optional()
+          .describe(
+            'Extra blocks. dependencies: tracker links (blocks / blocked_by / relates) of every sprint task plus board arrows, and where the other side is — its sprint, status and planned dates by its board card'
+          ),
         sprintId: z
           .number()
           .int()
@@ -118,7 +125,7 @@ export function createSprintContextMcpServer(input: {
           .describe('Optional issue keys to include (positions/links scoped to these tasks)'),
       },
     },
-    async ({ assigneeId, featureId, sprintId, taskIds }) => {
+    async ({ assigneeId, featureId, include, sprintId, taskIds }) => {
       try {
         const payload = await loadMcpSprintContext({
           assigneeId,
@@ -128,7 +135,19 @@ export function createSprintContextMcpServer(input: {
           taskIds,
           viewerUserId: input.userId,
         });
-        return toolJson(await withQuarterContext(await withPendingProposal(payload, input.userId), { onlyMemberId: assigneeId, ownerId: input.userId }));
+        const withQuarter = await withQuarterContext(await withPendingProposal(payload, input.userId), {
+          onlyMemberId: assigneeId,
+          ownerId: input.userId,
+        });
+        if (!include?.includes('dependencies')) {
+          return toolJson(withQuarter);
+        }
+        const dependencies = await loadSprintContextDependencies({
+          issueTracker: await getIssueTrackerProviderClientForOrganization(input.organizationId),
+          organizationId: input.organizationId,
+          payload,
+        });
+        return toolJson({ ...withQuarter, dependencies });
       } catch (error) {
         return toolError(error);
       }
