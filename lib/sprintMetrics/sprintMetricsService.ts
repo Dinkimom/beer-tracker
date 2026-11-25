@@ -9,7 +9,7 @@ import type { IssueTrackerProviderClient } from '@/lib/issueTrackerProvider/type
 import type { SprintListItem } from '@/types/tracker';
 
 import { loadSprintBurndownSource } from '@/lib/burndown/loadSprintBurndownSource';
-import { apiCache, cacheKeys } from '@/lib/cache';
+import { listBoardSprintsCached } from '@/lib/sprints/listBoardSprintsCached';
 import { loadSprintTaskCompletionRules } from '@/lib/sprints/loadSprintTaskCompletionRules';
 import { loadTrackerIntegrationForOrganization } from '@/lib/trackerIntegration';
 
@@ -30,9 +30,6 @@ const OPEN_SPRINT_TTL_MS = 15 * 60 * 1000;
 const COMPUTE_CONCURRENCY = 2;
 /** Спринт, расчёт которого упал, не повторяется это время — иначе `pending` не обнулится никогда. */
 const FAILURE_COOLDOWN_MS = 30 * 60 * 1000;
-
-/** Как у GET /api/sprints: клиент опрашивает дашборд каждые несколько секунд, трекер дёргать незачем. */
-const SPRINTS_CACHE_TTL_SECONDS = 10 * 60;
 
 /** Расчёт спринта дольше — в лог (обычно это медленный changelog трекера). */
 const SLOW_SPRINT_MS = 5000;
@@ -151,18 +148,6 @@ async function computeQueue(input: LoadBoardSprintMetricsInput, queue: SprintLis
     }
   };
   await Promise.all(Array.from({ length: COMPUTE_CONCURRENCY }, worker));
-}
-
-async function listBoardSprintsCached(
-  issueTracker: IssueTrackerProviderClient,
-  boardId: number
-): Promise<SprintListItem[]> {
-  const cacheKey = cacheKeys.sprints(issueTracker.organizationId, boardId);
-  const cached = apiCache.get<SprintListItem[]>(cacheKey);
-  if (cached) return cached;
-  const sprints = await issueTracker.listSprints(boardId);
-  if (sprints.length > 0) apiCache.set(cacheKey, sprints, SPRINTS_CACHE_TTL_SECONDS);
-  return sprints;
 }
 
 function startBackfill(input: LoadBoardSprintMetricsInput, queue: SprintListItem[]): void {

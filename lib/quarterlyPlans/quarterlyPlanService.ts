@@ -20,10 +20,10 @@ import {
   boardAvailabilityEventFromRow,
   listBoardAvailabilityEvents,
 } from '@/lib/boardAvailability/boardAvailabilityEventsRepository';
-import { apiCache, cacheKeys } from '@/lib/cache';
 import { findOrganizationById } from '@/lib/organizations';
 import { DEFAULT_PLANNER_TIMELINE_SCALE, readPlannerTimelineScale } from '@/lib/plannerTimelineScale';
 import { boardOwnSprints } from '@/lib/sprints/boardOwnSprints';
+import { listBoardSprintsCached } from '@/lib/sprints/listBoardSprintsCached';
 import { loadRoleResolutionContext } from '@/lib/sprints/sprintContextTeamMembers';
 import { listTaskCardSpans } from '@/lib/sprints/taskPositionsRepository';
 import { enrichPlannerTeamMembersFromTracker, fetchAllTeamMembersForOrg, listTeams } from '@/lib/staffTeams';
@@ -56,9 +56,6 @@ import {
 } from './quarterlyPlanVersionHistory';
 import { fetchQuarterlyPlanVersionWithPrevious } from './quarterlyPlanVersionsRepository';
 import { buildQuarterWeeks, quartersOfWindow, resolveWeekSpan } from './quarterWeeks';
-
-/** Тот же срок, что у `/api/sprints`: список спринтов доски общий в кэше. */
-const SPRINTS_CACHE_TTL_SECONDS = 10 * 60;
 
 type TeamRoster = Omit<QuarterlyPlanTeam, 'sprints'>;
 
@@ -98,13 +95,8 @@ export async function loadQuarterlyPlanTeams(organizationId: string): Promise<Te
 }
 
 async function loadBoardSprints(issueTracker: IssueTrackerProviderClient, boardId: number): Promise<SprintListItem[]> {
-  const cacheKey = cacheKeys.sprints(issueTracker.organizationId, boardId);
-  const cached = apiCache.get<SprintListItem[]>(cacheKey);
-  if (cached) return cached;
   try {
-    const sprints = await issueTracker.listSprints(boardId);
-    if (sprints.length > 0) apiCache.set(cacheKey, sprints, SPRINTS_CACHE_TTL_SECONDS);
-    return sprints;
+    return await listBoardSprintsCached(issueTracker, boardId);
   } catch (error) {
     // Без спринтов доска остаётся рабочей: лента спринтов в строке команды просто пустая.
     console.warn(`[quarterly-plan] listSprints(${boardId}):`, error);

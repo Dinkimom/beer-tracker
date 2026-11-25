@@ -1,9 +1,36 @@
 import type {
   SprintContextCalendarDay,
+  SprintContextPayload,
   SprintContextPosition,
   SprintContextPositionSchedule,
   SprintContextToday,
 } from '@/lib/sprints/sprintContextTypes';
+
+import { buildSprintCards } from '@/lib/quarterlyPlans/quarterlyPlanSprintCards';
+
+/** Сделана ли задача спринта: по канону «сделано» у карточки, иначе по категории статуса; null — трекер молчал. */
+export function sprintTaskDone(task: {
+  schedule?: { state: string };
+  statusCategory?: string | null;
+}): boolean | null {
+  if (task.schedule) return task.schedule.state === 'done';
+  return task.statusCategory ? task.statusCategory === 'done' : null;
+}
+
+/** Первый и последний рабочий день карточек спринта датами, по ключу задачи; без дат спринта — пусто. */
+export function cardDatesOfPayload(
+  payload: Pick<SprintContextPayload, 'meta' | 'positions'>
+): Record<string, { endDate: string; startDate: string }> {
+  const window = payload.meta.sprintWindow;
+  if (!window) {
+    return {};
+  }
+  return buildSprintCards({
+    partsPerDay: payload.meta.partsPerDay,
+    positions: payload.positions.map((position) => ({ ...position, sprintId: payload.meta.sprintId })),
+    sprints: [{ endDate: window.endDate, id: payload.meta.sprintId, name: window.name ?? '', startDate: window.startDate }],
+  });
+}
 
 /**
  * «Сегодня» относительно сетки спринта: дата (UTC, как у meta.calendarDays), индекс рабочего дня

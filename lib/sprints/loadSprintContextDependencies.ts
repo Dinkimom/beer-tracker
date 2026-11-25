@@ -10,6 +10,7 @@ import { buildSprintCards } from '@/lib/quarterlyPlans/quarterlyPlanSprintCards'
 import { loadSprintTaskCompletionRules } from '@/lib/sprints/loadSprintTaskCompletionRules';
 import { buildSprintContextDependencies, type DependencyTaskInfo } from '@/lib/sprints/sprintContextDependencies';
 import { mapSprintHistory } from '@/lib/sprints/sprintContextEnrichment';
+import { cardDatesOfPayload, sprintTaskDone } from '@/lib/sprints/sprintContextToday';
 import { isTaskCompleted, type SprintTaskCompletionRules } from '@/lib/sprints/sprintTaskCompletion';
 import { listTaskCardSpans } from '@/lib/sprints/taskPositionsRepository';
 
@@ -21,29 +22,16 @@ type Tracker = Pick<
   'getIssue' | 'getSprint' | 'listIssueLinksBatch' | 'listStatuses' | 'providerKind'
 >;
 
-/** Сделана ли задача спринта: по канону «сделано» у карточки, иначе по категории статуса; null — трекер молчал. */
-function taskDone(task: { schedule?: { state: string }; statusCategory?: string | null }): boolean | null {
-  if (task.schedule) return task.schedule.state === 'done';
-  return task.statusCategory ? task.statusCategory === 'done' : null;
-}
-
 /** Задачи спринта: карточки (кроме перенесённых в трекере) и бэклог спринта, со сроками на этой доске. */
 function collectSprintTasks(payload: SprintContextPayload): Map<string, DependencyTaskInfo> {
   const tasks = new Map<string, DependencyTaskInfo>();
-  const window = payload.meta.sprintWindow;
   const positions = payload.positions.filter((position) => position.inTrackerSprint !== false);
-  const cards = window
-    ? buildSprintCards({
-        partsPerDay: payload.meta.partsPerDay,
-        positions: positions.map((position) => ({ ...position, sprintId: payload.meta.sprintId })),
-        sprints: [{ endDate: window.endDate, id: payload.meta.sprintId, name: window.name ?? '', startDate: window.startDate }],
-      })
-    : {};
+  const cards = cardDatesOfPayload(payload);
   for (const position of positions) {
     const card = cards[position.taskId];
     tasks.set(position.taskId, {
       assigneeName: position.assigneeName,
-      done: taskDone(position),
+      done: sprintTaskDone(position),
       statusCategory: position.statusCategory,
       summary: position.summary,
       ...(card ? { plannedEnd: card.endDate, plannedStart: card.startDate } : {}),
@@ -53,7 +41,7 @@ function collectSprintTasks(payload: SprintContextPayload): Map<string, Dependen
     if (!tasks.has(task.taskId)) {
       tasks.set(task.taskId, {
         assigneeName: task.assigneeName,
-        done: taskDone(task),
+        done: sprintTaskDone(task),
         statusCategory: task.statusCategory,
         summary: task.summary,
       });

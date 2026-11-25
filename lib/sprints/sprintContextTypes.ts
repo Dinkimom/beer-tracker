@@ -179,6 +179,41 @@ export interface SprintContextDependencies {
   warnings?: string[];
 }
 
+/** Задача соседнего спринта в сводке по людям. */
+export interface SprintContextNeighbourTask {
+  done: boolean | null;
+  /** Карточка стоит на доске соседнего спринта (иначе задача только в трекере, без дат). */
+  onBoard: boolean;
+  /** Частей плана с начала сегодняшнего дня (только у карточек). */
+  partsLeft?: number;
+  plannedEnd?: string;
+  plannedStart?: string;
+  /** Состояние по плану на сегодня, как positions[].schedule.state. */
+  state?: SprintContextPositionSchedule['state'];
+  statusCategory?: string;
+  summary?: string;
+  taskId: string;
+}
+
+export interface SprintContextNeighbourPerson {
+  /** null — задачи без исполнителя. */
+  assigneeId: string | null;
+  assigneeName?: string;
+  /** Сумма частей: у предыдущего спринта — оставшихся (partsLeft), у следующего — запланированных. */
+  parts: number;
+  tasks: SprintContextNeighbourTask[];
+}
+
+/** Соседний спринт той же доски, сведённый по людям. */
+export interface SprintContextNeighbourSprint {
+  endDate: string;
+  name: string;
+  people: SprintContextNeighbourPerson[];
+  sprintId: number;
+  startDate: string;
+  status: string;
+}
+
 export interface SprintContextGoalItem {
   done: boolean;
   id: string;
