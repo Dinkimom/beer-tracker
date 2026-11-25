@@ -21,6 +21,28 @@ export interface SprintContextPlanVsActual {
   slippedParts: number;
 }
 
+/**
+ * Задача по плану доски относительно сегодня (meta.today): scheduled — окно впереди, due_today —
+ * начинается сегодня, in_window — началась раньше и идёт сейчас, overdue — окно кончилось, задача
+ * не сделана, done — сделана.
+ */
+export interface SprintContextPositionSchedule {
+  /** Не начата, а по плану идёт уже столько рабочих дней (только in_window / overdue). */
+  notStartedForDays?: number;
+  /** Частей плана с начала сегодняшнего дня до конца окна. */
+  partsLeft: number;
+  state: 'done' | 'due_today' | 'in_window' | 'overdue' | 'scheduled';
+}
+
+/** Сегодня на сетке спринта. */
+export interface SprintContextToday {
+  /** YYYY-MM-DD (UTC, как meta.calendarDays). */
+  date: string;
+  /** Индекс рабочего дня; null — выходной или вне окна спринта. */
+  day: number | null;
+  relation: 'after_sprint' | 'before_sprint' | 'in_sprint';
+}
+
 interface SprintContextSprintHistoryItem {
   name: string;
   sprintId: string;
@@ -45,6 +67,8 @@ export interface SprintContextPosition {
   plannedStartPart: number | null;
   planVsActual?: SprintContextPlanVsActual;
   priority?: string | null;
+  /** Ожидаемое состояние по плану на сегодня; нет поля — нет дат спринта. */
+  schedule?: SprintContextPositionSchedule;
   segments?: SprintContextPositionSegment[];
   /** Soft from tracker: sprints the issue belongs/belonged to (current + closed). */
   sprintHistory?: SprintContextSprintHistoryItem[];
@@ -197,6 +221,7 @@ interface SprintContextMeta {
   schemaVersion: typeof SPRINT_CONTEXT_SCHEMA_VERSION;
   sprintId: number;
   sprintWindow?: SprintContextSprintWindow;
+  today?: SprintContextToday;
   warnings?: string[];
   /** Sat/Sun inside the sprint window. No day index — do not place positions on these dates. */
   weekendDays?: SprintContextWeekendDay[];

@@ -33,8 +33,14 @@ import {
   loadSprintContextTeamMembers,
   stampCapacityWithTeamRoles,
 } from '@/lib/sprints/sprintContextTeamMembers';
+import {
+  buildPositionSchedule,
+  buildSprintContextToday,
+  sprintContextTodayMeta,
+} from '@/lib/sprints/sprintContextToday';
 import { isTaskCompleted, type SprintTaskCompletionRules } from '@/lib/sprints/sprintTaskCompletion';
 import { listStaff } from '@/lib/staffTeams';
+import { getPlannerNow } from '@/utils/plannerClock';
 
 async function loadOrgHolidayCountry(
   organizationId: string
@@ -249,14 +255,21 @@ async function softLoadSprintIssues(input: {
   }
 }
 
+interface PositionEnrichmentContext {
+  completionRules: SprintTaskCompletionRules | null;
+  issuesByKey: Map<string, IssueInfo>;
+  lookup: ReturnType<typeof buildAssigneeLookup>;
+  partsPerDay: number;
+  sprintStatus: string | undefined;
+  today: ReturnType<typeof buildSprintContextToday>;
+  trackerIssuesLoaded: boolean;
+}
+
 function enrichPosition(
   position: SprintContextPosition,
-  lookup: ReturnType<typeof buildAssigneeLookup>,
-  issuesByKey: Map<string, IssueInfo>,
-  sprintStatus: string | undefined,
-  trackerIssuesLoaded: boolean,
-  completionRules: SprintTaskCompletionRules | null
+  context: PositionEnrichmentContext
 ): { position: SprintContextPosition; unresolved: boolean } {
+  const { completionRules, issuesByKey, lookup, sprintStatus, today, trackerIssuesLoaded } = context;
   const next = { ...position };
   const assignee = resolveAssignee(position.assigneeId, lookup);
   if (assignee) {
@@ -284,19 +297,29 @@ function enrichPosition(
       next.inTrackerSprint = false;
     }
   }
+  const issueCompleted =
+    issue != null &&
+    isTaskCompleted(
+      {
+        originalStatus: issue.statusKey ?? undefined,
+        originalStatusId: issue.statusId ?? undefined,
+        resolution: issue.resolution ?? undefined,
+        statusTypeKey: issue.statusTypeKey ?? undefined,
+      },
+      completionRules
+    );
+  if (today) {
+    next.schedule = buildPositionSchedule({
+      completed: issueCompleted,
+      notStarted: next.statusCategory === 'todo',
+      partsPerDay: context.partsPerDay,
+      position,
+      today,
+    });
+  }
   next.planVsActual = buildPlanVsActual({
     inSprint: issue?.inSprint,
-    issueCompleted:
-      issue != null &&
-      isTaskCompleted(
-        {
-          originalStatus: issue.statusKey ?? undefined,
-          originalStatusId: issue.statusId ?? undefined,
-          resolution: issue.resolution ?? undefined,
-          statusTypeKey: issue.statusTypeKey ?? undefined,
-        },
-        completionRules
-      ),
+    issueCompleted,
     issueFound: issue != null,
     position,
     sprintStatus,
@@ -392,17 +415,24 @@ export async function enrichSprintContextPayload(input: {
     softWarnings.push(issuesWarning);
   }
 
+  const calendarDays = buildSprintContextCalendarDays(
+    input.payload.meta.sprintWindow?.startDate,
+    input.payload.meta.sprintWindow?.endDate
+  );
+  const today = buildSprintContextToday(calendarDays, getPlannerNow().toISOString().slice(0, 10));
+
   const unresolvedAssigneeIds: string[] = [];
-  const sprintStatus = input.payload.meta.sprintWindow?.status;
+  const positionContext: PositionEnrichmentContext = {
+    completionRules,
+    issuesByKey,
+    lookup,
+    partsPerDay: input.payload.meta.partsPerDay,
+    sprintStatus: input.payload.meta.sprintWindow?.status,
+    today,
+    trackerIssuesLoaded,
+  };
   const positions = input.payload.positions.map((position) => {
-    const { position: next, unresolved } = enrichPosition(
-      position,
-      lookup,
-      issuesByKey,
-      sprintStatus,
-      trackerIssuesLoaded,
-      completionRules
-    );
+    const { position: next, unresolved } = enrichPosition(position, positionContext);
     if (unresolved && position.assigneeId) {
       unresolvedAssigneeIds.push(position.assigneeId);
     }
@@ -417,10 +447,6 @@ export async function enrichSprintContextPayload(input: {
     return { ...note, assigneeName: assignee.name };
   });
 
-  const calendarDays = buildSprintContextCalendarDays(
-    input.payload.meta.sprintWindow?.startDate,
-    input.payload.meta.sprintWindow?.endDate
-  );
   const weekendDays = buildSprintContextWeekendDays(
     input.payload.meta.sprintWindow?.startDate,
     input.payload.meta.sprintWindow?.endDate
@@ -475,6 +501,7 @@ export async function enrichSprintContextPayload(input: {
       ...(calendarDays.length > 0 ? { calendarDays } : {}),
       holidayCountry,
       ...(holidayDays.length > 0 ? { holidayDays } : {}),
+      ...sprintContextTodayMeta(today),
       ...(weekendDays.length > 0 ? { weekendDays } : {}),
       ...(warnings.length > 0 ? { warnings } : {}),
     },

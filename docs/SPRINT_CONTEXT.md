@@ -178,8 +178,8 @@ curl -sS \
 
 | Field | Meaning |
 |-------|---------|
-| `meta` | `schemaVersion`, `sprintId`, `organizationId`, **`partsPerDay`** (из настроек орги), legend, optional `sprintWindow` + `boardId` + `featureId`, `calendarDays[]`, `warnings[]` |
-| `positions` | Placements + soft tracker fields (`status` / `statusDisplay` / `statusType` / **`statusCategory`** / `sprintHistory`) + **`planVsActual`** |
+| `meta` | `schemaVersion`, `sprintId`, `organizationId`, **`partsPerDay`** (из настроек орги), legend, optional `sprintWindow` + `boardId` + `featureId`, `calendarDays[]`, **`today`** (`date`, `day` — индекс рабочего дня или `null` в выходной и вне спринта, `relation`: `before_sprint` / `in_sprint` / `after_sprint`), `warnings[]` |
+| `positions` | Placements + soft tracker fields (`status` / `statusDisplay` / `statusType` / **`statusCategory`** / `sprintHistory`) + **`planVsActual`** + **`schedule`** — где задача должна быть сегодня по плану доски: `state` (`scheduled` окно впереди / `due_today` начинается сегодня / `in_window` идёт / `overdue` окно кончилось, не сделана / `done`), `partsLeft` (частей плана с начала сегодня), `notStartedForDays` (не начата, а по плану идёт уже N рабочих дней) |
 | `agenda` | Sorted timeline view: day/part/date + task + assignee name + summary |
 | `capacity` | Per-person load vs free parts (**tasks only**; notes ignored), overlaps, gaps, overloaded |
 | `featureLanes` | `draftRows`, `orderIds`, `hiddenIds` |
