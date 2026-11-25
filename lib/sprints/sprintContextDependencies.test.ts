@@ -31,6 +31,7 @@ describe('buildSprintContextDependencies', () => {
     const result = buildSprintContextDependencies({
       boardArrows: [],
       outside,
+      sprintId: 1256,
       sprintTasks,
       trackerLinks: { B11: [link('B5b', 'blocked_by')] },
     });
@@ -61,6 +62,7 @@ describe('buildSprintContextDependencies', () => {
     const result = buildSprintContextDependencies({
       boardArrows: [],
       outside: new Map([['X1', { done: false }]]),
+      sprintId: 1256,
       sprintTasks,
       trackerLinks: { B12: [link('X1', 'blocked_by')] },
     });
@@ -71,6 +73,7 @@ describe('buildSprintContextDependencies', () => {
     const result = buildSprintContextDependencies({
       boardArrows: [],
       outside: new Map([['X1', { done: true }]]),
+      sprintId: 1256,
       sprintTasks,
       trackerLinks: { B12: [link('X1', 'blocked_by')] },
     });
@@ -82,6 +85,7 @@ describe('buildSprintContextDependencies', () => {
     const result = buildSprintContextDependencies({
       boardArrows: [{ fromAnchor: null, fromTaskId: 'B12', id: 'a1', toAnchor: null, toTaskId: 'B11' }],
       outside: new Map(),
+      sprintId: 1256,
       sprintTasks,
       trackerLinks: { B11: [link('B12', 'blocked_by')], B12: [link('B11', 'blocks')] },
     });
@@ -94,10 +98,35 @@ describe('buildSprintContextDependencies', () => {
     expect(b12.blocks[0]).toMatchObject({ risk: 'ends_after_start', taskId: 'B11' });
   });
 
+  it('a task of the same sprint outside the filter is not outside the sprint', () => {
+    const result = buildSprintContextDependencies({
+      boardArrows: [],
+      outside: new Map([['B5b', { done: false, sprint: { name: 'Sprint 37', sprintId: 1256 } }]]),
+      sprintId: 1256,
+      sprintTasks,
+      trackerLinks: { B11: [link('B5b', 'blocked_by')] },
+    });
+    expect(result.tasks[0]!.waitsFor[0]).toMatchObject({ inThisSprint: true, taskId: 'B5b' });
+    expect(result.tasks[0]!.waitsFor[0]!.sprint).toBeUndefined();
+    expect(result.waitingOutside).toEqual([]);
+  });
+
+  it('no risk when the waiting side is already done', () => {
+    const result = buildSprintContextDependencies({
+      boardArrows: [],
+      outside: new Map([['FE1', { done: true }]]),
+      sprintId: 1256,
+      sprintTasks,
+      trackerLinks: { F1: [link('FE1', 'blocks')] },
+    });
+    expect(result.tasks[0]!.blocks[0]!.risk).toBeUndefined();
+  });
+
   it('keeps relates and custom tracker phrases, drops duplicates', () => {
     const result = buildSprintContextDependencies({
       boardArrows: [],
       outside: new Map(),
+      sprintId: 1256,
       sprintTasks,
       trackerLinks: {
         F1: [link('Y1', 'relates'), link('Y2', null, 'has to be done after'), link('Y3', 'duplicates')],

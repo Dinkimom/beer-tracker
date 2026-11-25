@@ -38,14 +38,14 @@ function trackerBucket(link: IssueTrackerIssueLink): Bucket | null {
 }
 
 /**
- * Риск по срокам, только для незакрытой задачи, которую ждут: её нигде нет на доске (`not_planned`) или по
- * плану она кончается в день начала ждущей задачи или позже (`ends_after_start`).
+ * Риск по срокам, только когда ждущая задача не сделана, а та, которую ждут, — тоже: её нигде нет на доске
+ * (`not_planned`) или по плану она кончается в день начала ждущей задачи или позже (`ends_after_start`).
  */
 function dependencyRisk(
   awaited: DependencyTaskInfo | undefined,
   waiting: DependencyTaskInfo | undefined
 ): SprintContextDependencyTarget['risk'] {
-  if (!awaited || awaited.done === true) {
+  if (!awaited || awaited.done === true || waiting?.done === true) {
     return undefined;
   }
   if (!awaited.plannedEnd) {
@@ -82,6 +82,8 @@ interface DependencyIndex {
   byTask: Map<string, Map<string, TargetWithBucket>>;
   sprintTasks: ReadonlyMap<string, DependencyTaskInfo>;
   infoOf: (taskId: string) => DependencyTaskInfo | undefined;
+  /** Задача этого спринта, даже если выпала из sprintTasks фильтром (assigneeId, taskIds). */
+  inThisSprint: (taskId: string) => boolean;
 }
 
 function addDependency(
@@ -96,7 +98,7 @@ function addDependency(
   index.byTask.set(taskId, targets);
   const key = `${bucket}:${otherId}`;
   const target = targets.get(key) ?? {
-    ...toTarget(otherId, index.infoOf(otherId), index.sprintTasks.has(otherId)),
+    ...toTarget(otherId, index.infoOf(otherId), index.inThisSprint(otherId)),
     bucket,
   };
   if (!target.via.includes(edge.via)) {
@@ -153,6 +155,8 @@ export function buildSprintContextDependencies(input: {
   boardArrows: readonly SprintContextTaskLink[];
   /** Задачи вне спринта, на которые ссылаются связи. */
   outside: ReadonlyMap<string, DependencyTaskInfo>;
+  /** Tracker sprint id этого спринта: задача вне sprintTasks, но в нём же, — не «вне спринта». */
+  sprintId: number;
   /** Задачи спринта (позиции и бэклог спринта). */
   sprintTasks: ReadonlyMap<string, DependencyTaskInfo>;
   trackerLinks: Readonly<Record<string, readonly IssueTrackerIssueLink[]>>;
@@ -160,6 +164,8 @@ export function buildSprintContextDependencies(input: {
   const index: DependencyIndex = {
     byTask: new Map(),
     infoOf: (taskId) => input.sprintTasks.get(taskId) ?? input.outside.get(taskId),
+    inThisSprint: (taskId) =>
+      input.sprintTasks.has(taskId) || input.outside.get(taskId)?.sprint?.sprintId === input.sprintId,
     sprintTasks: input.sprintTasks,
   };
   for (const [taskId, links] of Object.entries(input.trackerLinks)) {

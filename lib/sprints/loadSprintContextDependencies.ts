@@ -193,6 +193,12 @@ export async function loadSprintContextDependencies(input: {
     console.warn(`[sprint-context] dependencies(${payload.meta.sprintId}):`, error);
     warnings.push('dependencies_tracker_unavailable: tracker links not loaded, board arrows only');
   }
-  const dependencies = buildSprintContextDependencies({ boardArrows, outside, sprintTasks, trackerLinks });
+  const dependencies = buildSprintContextDependencies({
+    boardArrows,
+    outside,
+    sprintId: payload.meta.sprintId,
+    sprintTasks,
+    trackerLinks,
+  });
   return warnings.length > 0 ? { ...dependencies, warnings } : dependencies;
 }
