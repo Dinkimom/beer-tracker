@@ -35,10 +35,7 @@ services:
       retries: 30
 
   otorva-migrate:
-    build:
-      context: ${OTORVA_SOURCE:-../otorva}
-      dockerfile: Containerfile
-      target: migrator
+    image: ${OTORVA_MIGRATE_IMAGE:-docker.io/alfacrab/otorva-migrate:latest}
     environment:
       PGHOST: db
       PGUSER: postgres
@@ -55,10 +52,7 @@ services:
         condition: service_healthy
 
   otorva:
-    build:
-      context: ${OTORVA_SOURCE:-../otorva}
-      dockerfile: Containerfile
-      target: api
+    image: ${OTORVA_IMAGE:-docker.io/alfacrab/otorva:latest}
     environment:
       DATABASE_URL: postgresql://postgres:stand-only-postgres@db:5432/otorva
       JWT_SECRET: stand-only-otorva-jwt-secret-0123456789abcdef

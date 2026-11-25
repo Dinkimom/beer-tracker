@@ -106,14 +106,6 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # Встроенный трекер — отдельный приватный репозиторий: токен с правом чтения rusticapps/otorva.
-      - name: Checkout otorva
-        uses: actions/checkout@v4
-        with:
-          repository: rusticapps/otorva
-          token: ${{ secrets.OTORVA_REPO_TOKEN }}
-          path: .otorva
-
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
 
@@ -131,8 +123,6 @@ jobs:
 
       - name: Stand
         run: pnpm e2e:stand
-        env:
-          OTORVA_SOURCE: ${{ github.workspace }}/.otorva
 
       - name: Upload report
         if: failure()

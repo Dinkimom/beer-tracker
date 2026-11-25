@@ -6,10 +6,10 @@
 
 | Вопрос | Решение |
 |---|---|
-| Где код | Отдельный приватный репозиторий `rusticapps/otorva`. Доработки этапа 1 делались в монорепе и влиты PR #1 (2026-11-22); в beer-tracker — только обвязка: провайдер, compose, стенд |
+| Где код | Отдельный проект `rusticapps/otorva` (приватный репозиторий), для beer-tracker — зависимость по образу. Доработки этапа 1 влиты PR #1 (2026-11-22); в beer-tracker — только обвязка: провайдер, compose, стенд |
 | Где логика трекера | В otorva. Доски, спринты, ключи, оценки, фильтры и журнал изменений — Rust и интеграционные тесты otorva; провайдер в beer-tracker тонкий, как для Яндекса и Jira |
 | Вход | Email и пароль otorva: онбординг создаёт первого пользователя, вход в beer-tracker — по email и паролю otorva, JWT — токен трекера (вместо OAuth). Новых людей добавляет админ |
-| Поставка | Свой образ: Containerfile otorva (stage `api` и `migrator`) из клона `../otorva` или `OTORVA_SOURCE`. В compose — сервисы `otorva-migrate` и `otorva`, своя база `otorva` на общем PostgreSQL; в CI клон берётся токеном `OTORVA_REPO_TOKEN` |
+| Поставка | Образы Docker Hub `alfacrab/otorva` (API) и `alfacrab/otorva-migrate` (мигратор), amd64 и arm64 — публикует CI otorva при пуше в `master` (`latest`, `sha-<7>`) и по тегу. В compose — сервисы `otorva-migrate` и `otorva`, своя база `otorva` на общем PostgreSQL; версия — `OTORVA_IMAGE` / `OTORVA_MIGRATE_IMAGE` |
 
 ## Контракт провайдера и otorva
 
@@ -28,7 +28,7 @@
 
 ## Этапы
 
-0. **Сборка** — сделано: compose-профиль `otorva` из клона `rusticapps/otorva`; тесты трекера — в его репозитории.
+0. **Поставка** — сделано: compose-профиль `otorva` на готовых образах; сборка, тесты и публикация — в репозитории otorva.
 1. **Модель планирования в otorva** — сделано: ~~очереди с ключом и порядковыми ключами задач~~ (сделано: `queues`, ключ `KEY-12`, `GET /tasks/by-key/{key}`); ~~поля оценок, сроков и родителя~~ (сделано); ~~доски и спринты с составом~~ (сделано); ~~фильтры списка (очередь, спринт, исполнитель, статус, родитель, обновлено с/по, текст)~~ (сделано, плюс `keys`, `sort=updated_asc`, `X-Total-Count`); ~~журнал изменений задачи (поле, было, стало, автор, время) в транзакции правки~~ (сделано: `task_events`); ~~создание пользователей админом~~ (сделано: `is_admin`, `GET /auth/setup-state`, `POST /auth/bootstrap` по `OTORVA_BOOTSTRAP_TOKEN`).
 2. **Провайдер `otorva` в beer-tracker** — сделано, кроме админки: вид провайдера и хранимый провайдер, клиент (частичная реализация по образцу Jira: неподдержанное — `UnsupportedIssueTrackerOperationError`), capabilities, вход по email и паролю, вариант на онбординге и в админке, i18n ru/en, контрактные тесты. Сервис `otorva` — стандартный в compose (без профиля).
 3. **Синк и история** — сделано (живой прогон синка — на стенде этапа 4): синк на `listIssuesUpdatedInRange` и `listIssuesForQueue`, снимки, журнал otorva → `issue_changelog_events`, вкладка «История» и диаграмма сгорания.
@@ -62,7 +62,6 @@
 ## Запуск
 
 ```bash
-git clone git@github.com:rusticapps/otorva.git ../otorva   # один раз
 docker compose -f docker-compose.yml -f docker-compose.dev.yml --profile otorva up -d otorva
 curl http://127.0.0.1:8090/health
 ```

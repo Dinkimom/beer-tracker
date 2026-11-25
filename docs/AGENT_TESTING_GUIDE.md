@@ -91,7 +91,7 @@ Playwright, конфиг — [`playwright.config.ts`](../playwright.config.ts), 
 
 Демо проверяет интерфейс, но не путь данных: на фикстурах нет API-роутов, PostgreSQL, провайдера и записи в трекер. Стенд закрывает это на встроенном трекере otorva — `pnpm e2e:stand` ([`scripts/e2e/stand.sh`](../scripts/e2e/stand.sh)):
 
-- поднимает [`docker-compose.stand.yml`](../docker-compose.stand.yml) — пустой PostgreSQL на tmpfs, Redis, otorva из клона `../otorva` (или `OTORVA_SOURCE`) — и отдельный dev-сервер планера хоста на `:3100` (рабочий стек и его база не трогаются; переменные стенда сильнее `.env`);
+- поднимает [`docker-compose.stand.yml`](../docker-compose.stand.yml) — пустой PostgreSQL на tmpfs, Redis, otorva из образов Docker Hub (перед подъёмом скачивается свежий `latest`) — и отдельный dev-сервер планера хоста на `:3100` (рабочий стек и его база не трогаются; переменные стенда сильнее `.env`);
 - гоняет [`playwright.stand.config.ts`](../playwright.stand.config.ts) по порядку на одной базе: онбординг и вход (TC-134), сид otorva из фикстур демо ([`e2e/stand/seedOtorva.ts`](../e2e/stand/seedOtorva.ts)), команда в админке (TC-135), затем сценарии планера (TC-136…140) — что записалось, проверяется запросом в REST otorva;
 - опускает стенд. `STAND_KEEP=1` — оставить для разбора; `bash scripts/e2e/stand.sh up | down` — вручную.
 

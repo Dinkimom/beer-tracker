@@ -7,7 +7,7 @@
 #   bash scripts/e2e/stand.sh run [аргументы playwright]   # up → e2e/stand → down (pnpm e2e:stand)
 #
 # Порты: планер STAND_PORT (3100), PostgreSQL 55432, Redis 56379, otorva 58090.
-# otorva собирается из клона rusticapps/otorva: OTORVA_SOURCE или ../otorva рядом с репозиторием.
+# otorva — готовые образы Docker Hub (OTORVA_IMAGE / OTORVA_MIGRATE_IMAGE), перед подъёмом скачивается свежий.
 # Лог dev-сервера — e2e/.results/stand/next.log. STAND_KEEP=1 — не опускать после run (разбор падений).
 set -euo pipefail
 
@@ -49,18 +49,16 @@ wait_url() {
 
 up() {
   down
-  local source="${OTORVA_SOURCE:-../otorva}"
-  if [[ ! -f "$source/Containerfile" ]]; then
-    echo "Нет клона otorva в $source: git clone git@github.com:rusticapps/otorva.git ../otorva или задайте OTORVA_SOURCE" >&2
-    exit 1
-  fi
   if curl -s -o /dev/null "http://localhost:$port"; then
     echo "Порт $port занят — задайте STAND_PORT" >&2
     exit 1
   fi
   mkdir -p "$state_dir"
   STAND_DB_PORT="$db_port" STAND_REDIS_PORT="$redis_port" STAND_OTORVA_PORT="$otorva_port" \
-    "${compose[@]}" up -d --build --wait
+    "${compose[@]}" pull --quiet otorva-migrate otorva ||
+    echo "Не удалось скачать образы otorva — стенд поднимется на локальных" >&2
+  STAND_DB_PORT="$db_port" STAND_REDIS_PORT="$redis_port" STAND_OTORVA_PORT="$otorva_port" \
+    "${compose[@]}" up -d --wait
 
   # Переменные окружения сильнее .env хоста: стенд не видит рабочую базу, трекер и OAuth.
   set -m
