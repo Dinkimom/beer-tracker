@@ -17,8 +17,8 @@
   "features/context-menu/components/ContextMenu/hooks/useContextMenu.ts::hook-outputs::useContextMenu": 24,
   "features/sidebar/components/GoalItemBody.tsx::pass-through": 79,
   "features/sidebar/components/SprintGoalsSection.tsx::pass-through": 59,
-  "features/sprint/components/SprintPlanner/components/SprintPlannerControlsBar.tsx::pass-through": 58,
-  "features/sprint/components/SprintPlanner/components/SprintPlannerControlsBarLeftSection.tsx::pass-through": 60,
+  "features/sprint/components/SprintPlanner/components/SprintPlannerControlsBar.tsx::pass-through": 56,
+  "features/sprint/components/SprintPlanner/components/SprintPlannerControlsBarLeftSection.tsx::pass-through": 55,
   "features/swimlane/components/SwimlaneDeveloperHeader.tsx::pass-through": 55,
   "features/swimlane/hooks/useSwimlaneLayout.ts::hook-outputs::useSwimlaneLayout": 23,
   "features/task/components/TaskCard/components/TaskCardSwimlaneInlineEditor.tsx::pass-through": 61
