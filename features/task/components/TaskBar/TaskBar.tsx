@@ -20,6 +20,7 @@ import { useCardContextMenu } from '@/features/context-menu/hooks/useCardContext
 import { DraftItemCommentButton } from '@/features/swimlane/components/DraftItemCommentButton';
 import { PlanPatchPendingToolbar } from '@/features/swimlane/components/PlanPatchPendingToolbar';
 import { resolvePlanPatchTaskBarChrome } from '@/features/swimlane/components/PlanPatchPreviewCaption';
+import { useSwimlaneDropSettle } from '@/features/swimlane/hooks/useSwimlaneDropSettle';
 import { isQuickAddChooserDraft } from '@/features/task/components/TaskCard/components/taskCardContentHelpers';
 import { DiagramNameEditContext } from '@/features/task/components/TaskCard/components/TaskCardSwimlaneDiagramCaption';
 import { canDropTaskOnSidebar } from '@/features/task/utils/canDropTaskOnSidebar';
@@ -262,6 +263,7 @@ const TaskBarSurface = observer(function TaskBarSurface(props: TaskBarProps) {
       swimlaneCommentId,
     });
   const noteFocusMode = useTaskBarNoteFocus({ developers, inlineTitleEditor, isStickyNoteCard });
+  useSwimlaneDropSettle(noteFocusMode.rootRef, task.id, hideSourceForOverlay, root.layoutStyle.left);
   const onDiagramNameChange = resolveDiagramNameChangeHandler({
     commentId: swimlaneCommentId,
     isDiagramCard,

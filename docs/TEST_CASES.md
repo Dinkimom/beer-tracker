@@ -98,9 +98,9 @@
 
 ### TC-022: Перемещение между исполнителями и днями
 - Контур: демо
-- Код: features/sprint/components/SprintPlanner/sprintPlannerDndHelpers.ts, features/task/components/TaskBar/
+- Код: features/sprint/components/SprintPlanner/sprintPlannerDndHelpers.ts, features/sprint/components/SprintPlanner/SprintPlannerDndShell.tsx, features/sprint/components/SprintPlanner/SprintPlannerDragOverlayPreview.tsx, features/task/components/TaskBar/
 - Шаги: перетащить карточку в строку другого исполнителя, затем на другой день.
-- Ожидаемо: карточка перемещается, позиция обновляется.
+- Ожидаемо: при захвате превью приподнимается (наклон и тень), после отпускания карточка плавно «приземляется» из точки отпускания в свою ячейку; при `prefers-reduced-motion` — без анимации. Карточка перемещается, позиция обновляется.
 - Автотест: e2e/functional/swimlaneDnd.spec.ts
 
 ### TC-023: Изменение длительности

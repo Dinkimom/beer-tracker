@@ -15,6 +15,7 @@ import type { ReactNode, RefObject } from 'react';
 import { DndContext, DragOverlay, MouseSensor, PointerSensor, TouchSensor, useSensor, useSensors } from '@dnd-kit/core';
 
 import { ZIndex, getPartsPerDay } from '@/constants';
+import { settleSwimlaneCardAfterDrop } from '@/features/swimlane/hooks/useSwimlaneDropSettle';
 import { SWIMLANE_TASK_DRAG_ACTIVATION_DISTANCE_PX } from '@/features/swimlane/utils/swimlaneTaskDragActivation';
 import { createRestrictSwimlaneDragOverlayModifier } from '@/lib/layers/application/swimlaneDrag/swimlaneDragOverlayRestrict';
 
@@ -115,7 +116,10 @@ export function SprintPlannerDndShell({
       onDragAbort={() => {
         dragAndDrop.resetDragState();
       }}
-      onDragCancel={() => {
+      onDragCancel={(event) => {
+        if (!isDragFromSidebar) {
+          settleSwimlaneCardAfterDrop(activeTask?.id, event.active.rect.current.translated);
+        }
         dragAndDrop.resetDragState();
       }}
       onDragEnd={(event) => {
@@ -125,6 +129,10 @@ export function SprintPlannerDndShell({
           dragContextRef.current = null;
           runDeveloperRowDragEndIfApplicable(event, developersManagement.handleDragEnd);
           return;
+        }
+        // Из сайдбара превью возвращает dropAnimation dnd-kit; с доски — карточка «приземляется» сама.
+        if (!isDragFromSidebar) {
+          settleSwimlaneCardAfterDrop(activeTask?.id, event.active.rect.current.translated);
         }
         dragAndDrop.handleDragEnd(event);
         dragContextRef.current = null;

@@ -287,6 +287,31 @@ html.theme-changing * {
   }
 }
 
+/* Подъём карточки свимлейна при захвате: превью DragOverlay чуть наклоняется к зрителю и отрывается тенью. */
+@keyframes swimlane-drag-lift {
+  from {
+    transform: none;
+    box-shadow: 0 1px 2px rgb(0 0 0 / 0.08);
+  }
+  to {
+    transform: perspective(900px) rotateX(6deg) scale(1.03);
+    box-shadow:
+      0 18px 30px -8px rgb(0 0 0 / 0.28),
+      0 6px 12px -4px rgb(0 0 0 / 0.14);
+  }
+}
+
+.swimlane-drag-lift {
+  transform-origin: 50% 100%;
+  animation: swimlane-drag-lift 160ms cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .swimlane-drag-lift {
+    animation: none;
+  }
+}
+
 /* Исключение: появление «+» в ячейке свимлейна (сброс transitions при theme-changing гасит Tailwind). */
 .swimlane-quick-add-preview-fade {
   animation: swimlane-quick-add-preview-enter 0.2s ease-out;

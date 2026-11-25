@@ -12,7 +12,7 @@ import { isEffectivelyQaTask } from '@/features/task/utils/taskUtils';
 export function getSwimlaneDragOverlayShellClass(isStickyNote: boolean, isPhotoCard = false): string {
   const radiusClass = getSwimlaneCardRadiusClass(isPhotoCard, isStickyNote);
   const overflowClass = isPhotoCard || isStickyNote ? 'overflow-visible' : 'overflow-hidden';
-  return `box-border h-full w-full min-w-0 ${overflowClass} ${radiusClass} shadow-xl`;
+  return `swimlane-drag-lift box-border h-full w-full min-w-0 ${overflowClass} ${radiusClass} shadow-xl`;
 }
 
 interface SprintPlannerDragOverlayPreviewProps {
