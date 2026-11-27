@@ -40,8 +40,14 @@ test('TC-134: онбординг на встроенном трекере и в�
   await signIn.getByLabel(ui.auth.otorva.passwordLabel, { exact: true }).fill(STAND_ADMIN.secret);
   await signIn.keyboard.press('Enter');
   await signIn.waitForURL(/\/select-board/);
-  // Сессия этого входа (cookie + токен в localStorage) — для сценариев после онбординга.
-  await context.storageState({ path: STAND_ADMIN_STATE });
+  // Сессия этого входа (cookie + токен в localStorage) — для сценариев после онбординга. Без кэша
+  // React Query (`components/QueryProvider.tsx`): в нём список досок до создания команды (TC-135), он
+  // «свежий» 30 минут, и планер в новом контексте ушёл бы на выбор команды, не перезапросив доски.
+  const state = await context.storageState();
+  for (const origin of state.origins) {
+    origin.localStorage = origin.localStorage.filter((item) => item.name !== 'beer-tracker-query-cache');
+  }
+  fs.writeFileSync(STAND_ADMIN_STATE, JSON.stringify(state));
   await context.close();
 });
 
