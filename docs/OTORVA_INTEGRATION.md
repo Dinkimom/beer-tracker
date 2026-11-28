@@ -28,7 +28,7 @@
 
 ## Этапы
 
-0. **Поставка** — сделано: compose-профиль `otorva` на готовых образах; сборка, тесты и публикация — в репозитории otorva.
+0. **Поставка** — сделано: compose на готовых образах, включается `OTORVA_ENABLED=1`; сборка, тесты и публикация — в репозитории otorva.
 1. **Модель планирования в otorva** — сделано: ~~очереди с ключом и порядковыми ключами задач~~ (сделано: `queues`, ключ `KEY-12`, `GET /tasks/by-key/{key}`); ~~поля оценок, сроков и родителя~~ (сделано); ~~доски и спринты с составом~~ (сделано); ~~фильтры списка (очередь, спринт, исполнитель, статус, родитель, обновлено с/по, текст)~~ (сделано, плюс `keys`, `sort=updated_asc`, `X-Total-Count`); ~~журнал изменений задачи (поле, было, стало, автор, время) в транзакции правки~~ (сделано: `task_events`); ~~создание пользователей админом~~ (сделано: `is_admin`, `GET /auth/setup-state`, `POST /auth/bootstrap` по `OTORVA_BOOTSTRAP_TOKEN`).
 2. **Провайдер `otorva` в beer-tracker** — сделано, кроме админки: вид провайдера и хранимый провайдер, клиент (частичная реализация по образцу Jira: неподдержанное — `UnsupportedIssueTrackerOperationError`), capabilities, вход по email и паролю, вариант на онбординге и в админке, i18n ru/en, контрактные тесты. Сервис `otorva` — стандартный в compose (без профиля).
 3. **Синк и история** — сделано (живой прогон синка — на стенде этапа 4): синк на `listIssuesUpdatedInRange` и `listIssuesForQueue`, снимки, журнал otorva → `issue_changelog_events`, вкладка «История» и диаграмма сгорания.
@@ -39,7 +39,7 @@
 - Вид провайдера `otorva`, клиент на общем `partialProviderClient`: чтение (задачи, выборки, доски с колонками, спринты, статусы по категории otorva, люди, очереди, переходы, связи, журнал как changelog) и запись (создание, правка, переходы, членство в спринтах, спринты, связи `relates`). Комментариев и чек-листов нет — 422.
 - Без веб-интерфейса: ключи задач текстом, «скопировать ссылку» скрыто (`supportsIssueWebLinks`); демо `?tracker=otorva`, TC-133.
 - Вход: `POST /api/auth/otorva/session` — email и пароль → JWT otorva; онбординг на пустом otorva создаёт первого админа по серверному `OTORVA_BOOTSTRAP_TOKEN`. JWT дальше идёт по общим путям как токен трекера; сырой `/myself` для otorva уходит в `/auth/me`. Подключение организации требует админа otorva.
-- `pnpm docker:dev` поднимает otorva; в обычном compose — профиль `otorva` и секреты `OTORVA_*` (env.example).
+- Выключен по умолчанию: `OTORVA_ENABLED=1` поднимает контейнеры otorva (`deploy.replicas`) и показывает «Встроенный трекер» на онбординге и в админке; без неё вариант скрыт, вход в otorva отклоняется. Секреты `OTORVA_*` — env.example.
 
 ### Что сделано на этапе 3
 
@@ -62,7 +62,7 @@
 ## Запуск
 
 ```bash
-docker compose -f docker-compose.yml -f docker-compose.dev.yml --profile otorva up -d otorva
+OTORVA_ENABLED=1 docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d otorva
 curl http://127.0.0.1:8090/health
 ```
 

@@ -2514,6 +2514,7 @@ export const enMessages = {
       errors: {
         already_initialized: 'The planner is already set up — sign in on the sign-in page',
         bootstrap_missing: 'The built-in tracker is not set up: set OTORVA_BOOTSTRAP_TOKEN on the server',
+        disabled: 'The built-in tracker is turned off on this server: turn it on with OTORVA_ENABLED=1',
         email_taken: 'A user with this email already exists in the built-in tracker',
         invalid_credentials: 'Wrong email or password',
         invalid_input: 'Check the email, name and password (at least 6 characters)',

@@ -8,7 +8,7 @@
  */
 import axios from 'axios';
 
-import { otorvaApiUrlFromEnv } from '@/lib/issueTrackerProvider/otorvaApi';
+import { isOtorvaEnabled, otorvaApiUrlFromEnv } from '@/lib/issueTrackerProvider/otorvaApi';
 import { readOrganizationIssueTrackerConfig } from '@/lib/issueTrackerProvider/settings';
 import { readOnPremSetupState } from '@/lib/onPrem/setupState';
 import { fetchFirstOrganizationId, findOrganizationById } from '@/lib/organizations/organizationRepository';
@@ -29,6 +29,7 @@ interface OtorvaCredentialsInput {
 export type OtorvaSessionErrorCode =
   | 'already_initialized'
   | 'bootstrap_missing'
+  | 'disabled'
   | 'email_taken'
   | 'invalid_credentials'
   | 'invalid_input'
@@ -67,6 +68,9 @@ function adminNames(input: OtorvaCredentialsInput): { first_name: string; last_n
 }
 
 export async function exchangeOtorvaCredentials(input: OtorvaCredentialsInput): Promise<OtorvaCredentialsResult> {
+  if (!isOtorvaEnabled()) {
+    return { code: 'disabled', ok: false, status: 404 };
+  }
   const email = input.email.trim().toLowerCase();
   const api = axios.create({ baseURL: await resolveOtorvaApiUrl(), timeout: OTORVA_AUTH_TIMEOUT_MS });
   try {

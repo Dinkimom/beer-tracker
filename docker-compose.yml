@@ -56,7 +56,9 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
       REDIS_URL: redis://redis:6379
       SYNC_CRON_SECRET: ${SYNC_CRON_SECRET:-}
-      # Встроенный трекер: онбординг создаёт его первого админа этим секретом (тот же, что у otorva).
+      # Встроенный трекер: 1 — предлагается на онбординге и в админке (и поднимаются контейнеры otorva ниже).
+      OTORVA_ENABLED: ${OTORVA_ENABLED:-0}
+      # Онбординг создаёт его первого админа этим секретом (тот же, что у otorva).
       OTORVA_BOOTSTRAP_TOKEN: ${OTORVA_BOOTSTRAP_TOKEN:-}
     depends_on:
       db:
@@ -120,10 +122,11 @@ services:
 
   # Встроенный трекер otorva (Rust, отдельный проект rusticapps/otorva): своя база `otorva` на том же PostgreSQL.
   # Готовые образы из Docker Hub — API и мигратор; другая версия — OTORVA_IMAGE / OTORVA_MIGRATE_IMAGE.
-  # Профиль «otorva»: docker compose --profile otorva up. Нужен OTORVA_JWT_SECRET в .env
-  # (≥32 байт, `openssl rand -hex 32`) — без него API не стартует.
+  # Выключен по умолчанию: поднимается только с OTORVA_ENABLED=1 в .env (именно 1 — это число реплик).
+  # Тогда же нужен OTORVA_JWT_SECRET (≥32 байт, `openssl rand -hex 32`) — без него API не стартует.
   otorva-migrate:
-    profiles: ["otorva"]
+    deploy:
+      replicas: ${OTORVA_ENABLED:-0}
     image: ${OTORVA_MIGRATE_IMAGE:-docker.io/alfacrab/otorva-migrate:latest}
     environment:
       PGHOST: db
@@ -142,7 +145,8 @@ services:
         condition: service_healthy
 
   otorva:
-    profiles: ["otorva"]
+    deploy:
+      replicas: ${OTORVA_ENABLED:-0}
     image: ${OTORVA_IMAGE:-docker.io/alfacrab/otorva:latest}
     environment:
       DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}@db:5432/otorva

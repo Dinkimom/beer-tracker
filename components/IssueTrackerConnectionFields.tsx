@@ -6,6 +6,7 @@ import type { IssueTrackerProviderKind } from '@/lib/issueTrackerProvider/types'
 import { CustomSelect } from '@/components/CustomSelect';
 import { Input } from '@/components/Input';
 import { useI18n } from '@/contexts/LanguageContext';
+import { useBuiltInTrackerEnabled } from '@/hooks/useBuiltInTrackerEnabled';
 import { ISSUE_TRACKER_PROVIDER_KINDS } from '@/lib/issueTrackerProvider/types';
 
 interface IssueTrackerConnectionFieldsProps {
@@ -33,9 +34,11 @@ export function IssueTrackerConnectionFields({
   onKindChange,
 }: IssueTrackerConnectionFieldsProps) {
   const { t } = useI18n();
-  const options: CustomSelectOption<IssueTrackerProviderKind>[] = ISSUE_TRACKER_PROVIDER_KINDS.map(
-    (value) => ({ label: t(`common.issueTracker.providerOption.${value}`), value })
-  );
+  const builtInTrackerEnabled = useBuiltInTrackerEnabled();
+  // Встроенный трекер — только если включён на сервере; уже выбранный остаётся в списке (админка).
+  const options: CustomSelectOption<IssueTrackerProviderKind>[] = ISSUE_TRACKER_PROVIDER_KINDS.filter(
+    (value) => value !== 'otorva' || builtInTrackerEnabled || kind === 'otorva'
+  ).map((value) => ({ label: t(`common.issueTracker.providerOption.${value}`), value }));
   const apiUrlId = `${idPrefix}-tracker-api-url`;
   // Яндекс — публичный API, встроенный трекер — адрес на этом сервере: поле не нужно.
   const showApiUrl = !apiUrlHidden && kind !== 'tracker' && kind !== 'otorva';

@@ -3,6 +3,8 @@ import type { OrganizationIssueTrackerPublicDto } from '@/lib/issueTrackerProvid
 import { getPlannerBeerTrackerApi } from '@/lib/plannerBeerTrackerApiOverride';
 
 interface OnPremSetupState {
+  /** Встроенный трекер otorva включён на сервере (`OTORVA_ENABLED`). */
+  builtInTrackerEnabled?: boolean;
   hasUsers?: boolean;
   initialized?: boolean;
   onPremMode?: boolean;

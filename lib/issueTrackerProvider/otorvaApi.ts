@@ -14,6 +14,15 @@ import axios from 'axios';
 // eslint-disable-next-line sonarjs/no-clear-text-protocols -- внутренняя сеть compose, без TLS
 export const OTORVA_DEFAULT_API_URL = 'http://otorva:8080/api/v1';
 
+/**
+ * Встроенный трекер включён на этом сервере: `OTORVA_ENABLED=1` (та же переменная поднимает контейнеры
+ * otorva в compose). Без неё вариант «Встроенный трекер» не предлагается и вход в него отклоняется.
+ */
+export function isOtorvaEnabled(): boolean {
+  const value = process.env.OTORVA_ENABLED?.trim().toLowerCase();
+  return value === '1' || value === 'true';
+}
+
 /** Адрес otorva на этом сервере: `OTORVA_API_URL` (например, `pnpm dev` на хосте) или сеть compose. */
 export function otorvaApiUrlFromEnv(): string {
   return process.env.OTORVA_API_URL?.trim() || OTORVA_DEFAULT_API_URL;

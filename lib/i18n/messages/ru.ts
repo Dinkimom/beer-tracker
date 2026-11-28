@@ -2518,6 +2518,7 @@ export const ruMessages = {
       errors: {
         already_initialized: 'Планер уже настроен — войдите на странице входа',
         bootstrap_missing: 'Встроенный трекер не настроен: задайте OTORVA_BOOTSTRAP_TOKEN на сервере',
+        disabled: 'Встроенный трекер выключен на этом сервере: включите его переменной OTORVA_ENABLED=1',
         email_taken: 'Пользователь с таким email уже есть во встроенном трекере',
         invalid_credentials: 'Неверный email или пароль',
         invalid_input: 'Проверьте email, имя и пароль (не короче 6 символов)',

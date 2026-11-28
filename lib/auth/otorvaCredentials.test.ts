@@ -44,6 +44,7 @@ describe('exchangeOtorvaCredentials', () => {
     loginStatus = 200;
     setupState.initialized = false;
     process.env.OTORVA_BOOTSTRAP_TOKEN = 'server-side-bootstrap-secret-0123456789';
+    process.env.OTORVA_ENABLED = '1';
     delete process.env.OTORVA_API_URL;
     const create = axios.create.bind(axios);
     vi.spyOn(axios, 'create').mockImplementation((config) => create({ ...config, adapter }));
@@ -51,6 +52,20 @@ describe('exchangeOtorvaCredentials', () => {
   afterEach(() => {
     vi.restoreAllMocks();
     delete process.env.OTORVA_BOOTSTRAP_TOKEN;
+    delete process.env.OTORVA_ENABLED;
+  });
+
+  it('refuses both modes without OTORVA_ENABLED and does not call the tracker', async () => {
+    for (const value of [undefined, '0', 'no']) {
+      if (value === undefined) delete process.env.OTORVA_ENABLED;
+      else process.env.OTORVA_ENABLED = value;
+      for (const mode of ['register', 'login'] as const) {
+        expect(await exchangeOtorvaCredentials({ email: 'a@b.c', mode, password: 'password123' })).toEqual({ code: 'disabled', ok: false, status: 404 });
+      }
+    }
+    expect(requests).toEqual([]);
+    process.env.OTORVA_ENABLED = 'true';
+    expect(await exchangeOtorvaCredentials({ email: 'a@b.c', mode: 'login', password: 'password123' })).toMatchObject({ ok: true });
   });
 
   it('creates the first admin of an empty tracker with the server-side secret', async () => {
