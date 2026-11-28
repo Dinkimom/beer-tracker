@@ -170,8 +170,8 @@
 - Контур: боевой
 - Код: app/register/RegisterForm.tsx, app/register/RegisterFormFields.tsx, app/register/RegisterTrackerCredentials.tsx, app/auth-setup/page.tsx, app/auth-setup/AuthSetupCardInner.tsx, app/auth-setup/AuthSetupOtorvaSection.tsx, components/OtorvaCredentialsFields.tsx, components/IssueTrackerConnectionFields.tsx, hooks/useBuiltInTrackerEnabled.ts, app/api/onprem/setup-state/route.ts, app/api/auth/otorva/session/route.ts, lib/auth/otorvaCredentials.ts, lib/api/auth.ts
 - Шаги: на пустой установке с `OTORVA_ENABLED=1` открыть `/register`, выбрать «Встроенный трекер», указать организацию, имя, email и пароль; в новом браузере войти на `/auth-setup` по тем же email и паролю, сначала с неверным паролем.
-- Ожидаемо: при регистрации поля адреса API и токена нет — только имя, email и пароль; создаётся организация, её администратор и первый администратор встроенного трекера, открывается админка; неверный пароль — «Неверный email или пароль» на языке интерфейса (в английском — «Wrong email or password»), без входа; верный — выбор команды. Без `OTORVA_ENABLED=1` варианта «Встроенный трекер» в списке нет, а вход в него отклоняется («Встроенный трекер выключен на этом сервере»).
-- Автотест: e2e/stand/onboarding.spec.ts (вариант со включённым трекером; выключенный — unit-тест lib/auth/otorvaCredentials.test.ts)
+- Ожидаемо: при регистрации поля адреса API и токена нет — только имя, email и пароль; создаётся организация, её администратор и первый администратор встроенного трекера, открывается админка; неверный пароль — «Неверный email или пароль» на языке интерфейса (в английском — «Wrong email or password»), без входа; верный — выбор команды. Без `OTORVA_ENABLED=1` варианта «Встроенный трекер» в списке нет, а вход в него отклоняется («Встроенный трекер выключен на этом сервере»; проверяет unit-тест lib/auth/otorvaCredentials.test.ts).
+- Автотест: e2e/stand/onboarding.spec.ts
 
 ### TC-131: Упоминания в заметке
 - Контур: демо
