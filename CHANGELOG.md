@@ -2,6 +2,46 @@
 
 Notable changes to Beer Tracker, newest first. English first, then Russian.
 
+## [1.40.0] — 2026-11-28
+
+### English
+
+- Built-in tracker: Beer Tracker can now work without Yandex Tracker or Jira, on its own tracker otorva. When it is turned on (see below), pick «Built-in tracker» at onboarding: the first admin is created with an email and password, and everyone signs in the same way. Boards, sprints, statuses, estimates, links, sync, the «History» tab and the burndown work on it. Task keys are plain text, because the built-in tracker has no web UI.
+- Operators, built-in tracker: it is off by default and nothing extra starts. To turn it on, set `OTORVA_ENABLED=1` in `.env` (exactly `1`) together with `OTORVA_JWT_SECRET` and `OTORVA_BOOTSTRAP_TOKEN` (32+ bytes each, see `env.example`). `docker-compose.yml` then starts the `alfacrab/otorva` and `alfacrab/otorva-migrate` images, and onboarding and admin offer «Built-in tracker». `docker-compose.hub.yml` does not include it yet.
+- Sidebar «History» tab: who changed what in the sprint (tasks, notes, goals, links). An event leads to its card on the board, and hovering a key shows the task summary.
+- Swimlane: a card lifts when you grab it and glides into its cell when dropped. If the drop is not allowed, it glides back. Off with «reduce motion».
+- Data of boards, sprint goals, availability events and the server tracker cache is strictly separated between organizations.
+- Kanban: the people filter and lanes follow the board row; dragging works with the mouse only.
+- Tasks without an estimate are visible in totals («No estimate: N» instead of «?sp»).
+- «Refresh tasks» keeps unsaved drafts; a task that left the sprint leaves its board after any kind of move.
+- Retro: the first notes of two people on an empty board no longer overwrite each other; re-reading the board keeps unsaved cards.
+- Quarter plan: a failed sync or rollback no longer overwrites a later edit; linking a goal to a plan row updates the sprint.
+- Jira: the burndown sees tasks added to and removed from the sprint.
+- Interface: keyboard focus is visible again, text contrast meets AA, and long names wrap in the roadmap, metrics, «By features» rows, the backlog and the task panel. Board search with no matches says so next to the field.
+- Server memory leak fixed: TanStack Query timers were created on every server render.
+- MCP sprint context: today on the sprint grid, the expected state of each task, task dependencies (including across sprints) and the neighbouring sprints of the board.
+- Operators: three database migrations (`0011_issue_field_events`, `0012_board_object_events`, `0013_board_availability_events_organization`). They apply on start with `DB_MIGRATIONS_AUTO=true`; otherwise run them before starting the new version.
+- Docker Hub images `dinkimom/beer-tracker` and `dinkimom/beer-tracker-sync-worker` tags `1.40.0` and `latest` (`linux/amd64`, `linux/arm64`).
+
+### Русский
+
+- Встроенный трекер: Beer Tracker теперь может работать без Яндекс Трекера и Jira, на собственном трекере otorva. Если он включён (см. ниже), выберите на онбординге «Встроенный трекер»: первый админ создаётся по email и паролю, остальные входят так же. На нём работают доски, спринты, статусы, оценки, связи, синк, вкладка «История» и диаграмма сгорания. Ключи задач — текстом, потому что веб-интерфейса у встроенного трекера нет.
+- Операторам, встроенный трекер: по умолчанию выключен, ничего лишнего не поднимается. Включить — `OTORVA_ENABLED=1` в `.env` (именно `1`) вместе с `OTORVA_JWT_SECRET` и `OTORVA_BOOTSTRAP_TOKEN` (каждый не короче 32 байт, см. `env.example`). Тогда `docker-compose.yml` поднимает образы `alfacrab/otorva` и `alfacrab/otorva-migrate`, а онбординг и админка предлагают «Встроенный трекер». В `docker-compose.hub.yml` его пока нет.
+- Вкладка сайдбара «История»: кто и что менял в спринте (задачи, заметки, цели, стрелки). Событие ведёт к карточке на доске, по наведению на ключ — паспорт задачи.
+- Свимлейн: карточка приподнимается при захвате и плавно встаёт в ячейку после дропа. Если бросить туда, куда нельзя, плавно возвращается. С «уменьшением движения» отключено.
+- Данные досок, целей спринта, событий отсутствия и серверный кэш трекера строго разделены между организациями.
+- Канбан: фильтр и дорожки по людям смотрят на строку доски; перетаскивание — только мышью.
+- Задачи без оценки видны в итогах («Без оценки: N» вместо «?sp»).
+- «Обновить задачи» не стирает несохранённые черновики; задача, ушедшая из спринта, уходит с его доски при любом переносе.
+- Ретро: первые заметки двух людей на пустой доске больше не затирают друг друга; перечитывание доски не стирает несохранённые карточки.
+- План квартала: неудачная синхронизация или откат больше не затирают более позднюю правку; привязка цели к строке плана обновляет спринт.
+- Jira: диаграмма сгорания видит добавление задач в спринт и снятие с него.
+- Интерфейс: снова виден фокус с клавиатуры, контраст текста не ниже AA, длинные названия переносятся в роадмэпе, метриках, строках «По фичам», бэклоге и панели задачи. Поиск по доске без совпадений пишет об этом рядом с полем.
+- Исправлена утечка памяти сервера: таймеры TanStack Query создавались на каждый серверный рендер.
+- Контекст спринта для MCP: сегодня на сетке спринта, ожидаемое состояние каждой задачи, зависимости задач (в том числе через спринты) и соседние спринты доски.
+- Операторам: три миграции базы (`0011_issue_field_events`, `0012_board_object_events`, `0013_board_availability_events_organization`). С `DB_MIGRATIONS_AUTO=true` применяются при старте, иначе — применить до запуска новой версии.
+- Образы Docker Hub `dinkimom/beer-tracker` и `dinkimom/beer-tracker-sync-worker`, теги `1.40.0` и `latest` (`linux/amd64`, `linux/arm64`).
+
 ## [1.39.0] — 2026-11-19
 
 ### English
